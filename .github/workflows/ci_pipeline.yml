@@ -22,7 +22,7 @@ jobs:
         with:
           # REQUIRED: The directory containing the pre-built HTML files
           # This must match your local Jekyll build destination path.
-          directory: ./_site/docs 
+          directory: ./docs/_site
           
           # OPTIONS: Set arguments for QA (disabling external checks is faster)
-          arguments: '--url-ignore "/#/" --allow-hash-href --disable-external'
+          #arguments: '--url-ignore "/#/" --allow-hash-href --disable-external'
