@@ -1,0 +1,29 @@
+# devex-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devex-validator-api
+  labels:
+    app: devex-validator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: devex-validator
+  template:
+    metadata:
+      labels:
+        app: devex-validator
+    spec:
+      containers:
+      - name: api-container
+        image: devex-validator:latest # Use the image you just built
+        imagePullPolicy: Never       # IMPORTANT: Tells K8s to use the local image cache
+        ports:
+        - containerPort: 8000
+        livenessProbe:              # CRITICAL: Uses your /status endpoint for health
+          httpGet:
+            path: /status
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
