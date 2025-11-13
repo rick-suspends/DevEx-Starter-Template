@@ -1,0 +1,4 @@
+# Tell Jekyll where to find the source files
+source: .
+destination: _site
+

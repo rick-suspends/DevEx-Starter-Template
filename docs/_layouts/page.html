@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ page.title }} | {{ site.title }}</title>
+    
+    <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
+</head>
+
+<body>
+    <header>
+        <div class="site-header-content">
+            <h1><a href="{{ '/' | relative_url }}">{{ site.title }}</a></h1>
+            <nav class="main-nav">
+                <a href="{{ '/tutorials/' | relative_url }}">Tutorials</a>
+                <a href="{{ '/reference/' | relative_url }}">Reference</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        
+        <aside class="sidebar">
+            <h2 class="sidebar-heading">Documentation</h2>
+            
+            <ul class="nav-list">
+                {% for item in site.pages %}
+                    {% if item.layout == 'page' and item.parent == nil %}
+                    <li class="nav-item">
+                        <a href="{{ item.url | relative_url }}">{{ item.title }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+            </aside>
+
+        <main class="content">
+            <h1 class="page-title">{{ page.title }}</h1>
+            
+            <div class="markdown-body">
+                {{ content }}
+            </div>
+            
+            {% if page.last_modified_at %}
+            <p class="last-updated">
+                *Last Updated: {{ page.last_modified_at | date: "%B %-d, %Y" }}
+            </p>
+            {% endif %}
+            
+        </main>
+    </div>
+
+    <footer>
+        <p>&copy; {{ site.time | date: "%Y" }} {{ site.title }} | Built with Jekyll & GitHub Actions</p>
+    </footer>
+
+</body>
+</html>
