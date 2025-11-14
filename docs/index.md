@@ -54,7 +54,7 @@ You need to install Jekyll and its dependencies to build the site locally. Follo
 
 Format your output with JavaScript and CSS to enhance the user experience of your documentation site.
 
-These files are found in the `/docs/assets` directory.
+These files are in the `/docs/assets` directory.
 
 ### GitHub Pages
 
