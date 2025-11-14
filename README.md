@@ -58,6 +58,8 @@ To start a new DevEx project using this foundation:
     ```
     Your new service will be available at `http://localhost:8000`.
 
+For full documentation, see [Jekyll Docs Validator Docs](https://rick-suspends.github.io/DevEx-Docs-Validator/). 
+
 -----
 
 ## ☁️ Deployment Reference
