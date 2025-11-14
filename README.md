@@ -35,7 +35,7 @@ The **Jekyll Docs Validator API & CLI** is designed to:
 
 In the `/docs` directory is a functional Jekyll system with all the elements you need to build out your own Jekyll project.
 
-See the Jekyll out put at [DevEx Starter Template docs](https://rick-suspends.github.io/DevEx-Starter-Template/).
+See the Jekyll out put at [DevEx Starter Template docs](https://rick-suspends.github.io/DevEx-Starter-Template/)
 
 -----
 
