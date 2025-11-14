@@ -1,6 +1,6 @@
 ---
 layout: page
-title: Documentation for the DevEx Starter Template  
+title: Welcome to the DevEx Starter Template docs 
 permalink: /
 ---
 
