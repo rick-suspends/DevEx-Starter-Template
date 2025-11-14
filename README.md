@@ -68,4 +68,8 @@ This table provides the live access point for the example validator service, dem
 
 | Environment | Service | Access URL |
 | :--- | :--- | :--- |
-| **Production** | AWS Lightsail Container Service | `https://container-service-1.gqceswqwzkchr.us-west-2.cs.amazonlightsail.com` |
+| **Production** | AWS Lightsail Container Service | 
+   Get Status: `https://container-service-1.gqceswqwzkchr.us-west-2.cs.amazonlightsail.com\status`<br>
+   Get Info: `https://container-service-1.gqceswqwzkchr.us-west-2.cs.amazonlightsail.com\info`<br>
+   View docs: `https://container-service-1.gqceswqwzkchr.us-west-2.cs.amazonlightsail.com\docs`
+|
