@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
     <title>{{ page.title }} | {{ site.title }}</title>
     
     <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
@@ -10,10 +11,19 @@
 
 <body>
     <header>
-        <div class="site-header-content">
-            <h1><a href="{{ '/' | relative_url }}">{{ site.title }} documentation</a></h1>
-            <nav class="main-nav">
-            </nav>
+        <div id="site-header-content">
+            <div id="header-title">
+                <a href="{{ '/' | relative_url }}">{{ site.title }} Documentation</a>
+            </div>
+            <div id="logo-panel">
+                <img src="{{ '/assets/images/md.png' | relative_url }}" alt="{{ site.title }}">
+                <i class="fas fa-arrow-right"></i>
+                <img src="{{ '/assets/images/jekyll-full.png' | relative_url }}" alt="{{ site.title }}">
+                <i class="fas fa-arrow-right"></i>
+                <img src="{{ '/assets/images/html-css-js.png' | relative_url }}" alt="{{ site.title }}">
+                <i class="fas fa-arrow-right"></i>
+                <img src="{{ '/assets/images/github.png' | relative_url }}" alt="{{ site.title }}">
+            </div>
         </div>
     </header>
 
@@ -30,7 +40,7 @@
                     {% endif %}
                 {% endfor %}
             </ul>
-            </aside>
+          </aside>
 
         <main class="content">
             <div class="markdown-body">

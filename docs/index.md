@@ -9,7 +9,7 @@ permalink: /
 This project has three main sections: 
 - **Jekyll-based documentation content** &mdash; Markdown -> Jekyll -> HTML/JS/CSS -> GitHub Pages
 - **Python tools** &mdash; Validate the Markdown, links, and assets of the documentation content
-- **CI/CD flow** &mdash; GitHub Action workflows to run the Python tools before rebuilding and updating the Docker image.
+- **CI/CD flow** &mdash; GitHub Action workflows to run the Python tools before rebuilding and updating the Docker image, and before pushing doc changes to GitHub Pages.
 
 ## GitHub repository
 
@@ -55,9 +55,9 @@ For full details on how the Jekyll system is set up in this project, see [Jekyll
 
 ### HTML/JS/CSS
 
-Format your output with JavaScript and CSS to enhance the user experience of your documentation site.
+Format your static website pages with JavaScript and CSS to enhance the user experience of your documentation site.
 
-These files are in the `/docs/assets` directory.
+These files are in the `/docs/assets/css` and `/docs/assets/js` directories.
 
 ### GitHub Pages
 
