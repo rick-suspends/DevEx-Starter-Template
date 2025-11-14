@@ -25,6 +25,11 @@ body {
     background-color: #fff;
 }
 
+a {
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
 /* Headings: Ensure they stand out */
 h1, h2, h3 {
     color: #212529;
