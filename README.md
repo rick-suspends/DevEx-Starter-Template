@@ -77,7 +77,7 @@ To start a new DevEx project using this foundation:
     ```
     Your new service is available at `http://localhost:8000`.
 5. **Update documentation**
-    Follow the full documentation flow in the Jekyll example to create, generate, and publish project documentation. See [DevEx Starter Template Docs](https://rick-suspends.github.io/DevEx-Docs-Validator/). 
+    Follow the full documentation flow in the Jekyll example to create, generate, and publish project documentation. See [DevEx Starter Template Docs](https://rick-suspends.github.io/DevEx-Starter-Template/). 
 
 -----
 

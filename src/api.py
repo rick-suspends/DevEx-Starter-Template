@@ -23,8 +23,8 @@ class ServiceInfo(BaseModel):
 
 # The 'title' and 'version' appear in the auto-generated Swagger UI (/docs)
 app = FastAPI(
-    title="DevEx Docs Validator API",
-    description="A lightweight API for service health monitoring and system information.",
+    title="DevEx Starter Template API",
+    description="A lightweight API for health monitoring and system information.",
     version=os.getenv("VERSION", "1.0.0-dev"),
     contact={
         "name": "Richard Mallery",
