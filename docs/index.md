@@ -63,9 +63,9 @@ These files are in the `/docs/assets/css` and `/docs/assets/js` directories.
 
 GitHub Pages hosts your Jekyll-generated static site directly from your GitHub repository. The site is automatically built and deployed whenever you push changes to the repository.
 
-To enable GitHub Pages for your repository, go to the repository settings, navigate to the "Pages" section, and select the source branch and folder (usually `main` branch and `/docs` folder).
+To enable GitHub Pages for your repository, go to the repository **Settings**, navigate to the **Pages** section, and select the source branch and folder (usually `main` branch and `/docs` folder).
 
-Optionally, you can configure a custom domain for your GitHub Pages site in the same "Pages" section of the repository settings.
+Optionally, you can configure a custom domain for your GitHub Pages site in the same **Pages** section of the repository **Settings**.
 
 ## Python tools
 

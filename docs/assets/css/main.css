@@ -142,3 +142,9 @@ pre code {
     line-height: 1.4;
     color: #000;
 }
+
+.highlight {
+  display: inline-block; /* 1. Shrink-wrap to content width */
+  max-width: 100%;       /* 2. Prevent overflow if code is too long for parent */
+  overflow-x: auto;      /* 3. Add horizontal scroll if code overflows */
+}
