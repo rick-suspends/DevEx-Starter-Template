@@ -40,7 +40,7 @@ permalink: /jekyll-system.html/
 
 - `index.md`: This file serves as the home page for your documentation site.            
 
-**A note on underscores**: In Jekyll, directories and files that start with an underscore (`_`) are note generated in the static site, but Jekyll uses them for templating and configuration. You can also create your own directories and files that start with an underscore for work in progress or topics you want to remove from the released documentation but keep for future work, or simply store internal notes in them.
+**A note on underscores**: In Jekyll, directories and files that start with an underscore (`_`) are not generated in the static site, but Jekyll uses them for templating and configuration. You can also create your own directories and files that start with an underscore for work in progress or topics you want to remove from the released documentation but keep for future work, or simply store internal notes in them.
 
 For more information on Jekyll's structure and conventions, refer to the [Jekyll documentation](https://jekyllrb.com/docs/structure/).
 
