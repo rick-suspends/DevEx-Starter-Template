@@ -19,20 +19,38 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      # CORRECTED STEP: Use the widely available 'peaceiris/actions-wkhtmltopdf' action
-      - name: Install wkhtmltopdf and xvfb via action
-        uses: peaceiris/actions-wkhtmltopdf@v2 # <--- CORRECTED ACTION NAME
-        with:
-          wkhtmltopdf_version: "0.12.6" # Specify a stable version
-          install_xvfb: true # Request XVFB to be installed by the action
-        # This action handles apt update and most dependencies internally for wkhtmltopdf and xvfb
-
-      # This step for additional fonts might still be useful, keep it for now.
-      - name: Install additional system fonts (if needed)
+      - name: Install wkhtmltopdf, xvfb, and dependencies (Robust Method)
         run: |
-          sudo apt install -y fontconfig xfonts-base xfonts-75dpi
-        # Remove this step if wkhtmltopdf works and PDF rendering is fine without it.
-
+          sudo apt update
+          
+          # Install core dependencies for wkhtmltopdf and XVFB
+          sudo apt install -y fontconfig libfreetype6 libx11-6 libxext6 libxrender1 xfonts-base xfonts-75dpi xvfb openssl
+          
+          # --- Robust wkhtmltopdf installation for Ubuntu 22.04+ (handling libssl1.1) ---
+          # 1. Download wkhtmltopdf 0.12.6 from their official site (using `xenial` build as it's often more compatible)
+          #    This specific version is known to work with a separately installed libssl1.1.
+          WKHTMLTOPDF_VERSION="0.12.6"
+          WKHTMLTOPDF_FILENAME="wkhtmltox_${WKHTMLTOPDF_VERSION}-1.xenial_amd64.deb" # xenial build often avoids direct libssl3 conflicts
+          WKHTMLTOPDF_URL="https://downloads.wkhtmltopdf.org/0.12/0.12.6/${WKHTMLTOPDF_FILENAME}"
+          
+          echo "Downloading wkhtmltopdf from: ${WKHTMLTOPDF_URL}"
+          wget ${WKHTMLTOPDF_URL} -O wkhtmltox.deb
+          
+          # 2. Manually install libssl1.1 from an older Ubuntu release (e.g., Focal 20.04)
+          #    This resolves the explicit dependency on libssl1.1 for the wkhtmltopdf package.
+          echo "Installing libssl1.1 dependency..."
+          wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2_amd64.deb -O libssl1.1.deb
+          sudo dpkg -i libssl1.1.deb || true # Use '|| true' to allow dpkg to report errors but not fail the step immediately
+          sudo apt install -f -y # Attempt to fix broken dependencies from dpkg or missing ones
+          
+          # 3. Install wkhtmltopdf using apt (which now has libssl1.1 available)
+          echo "Installing wkhtmltopdf..."
+          sudo apt install -y ./wkhtmltox.deb
+          
+          # 4. Verify installation and path
+          which wkhtmltopdf
+          wkhtmltopdf --version
+          
       - name: Run PDF assembly script
         run: |
           chmod +x ./bin/assemble_docs_body.sh
