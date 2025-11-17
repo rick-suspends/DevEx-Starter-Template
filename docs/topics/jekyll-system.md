@@ -1,7 +1,7 @@
 ---
 layout: page
 title: Jekyll system 
-permalink: /jekyll-system.html/
+permalink: jekyll-system.html
 ---
 
 # {{ page.title }}
