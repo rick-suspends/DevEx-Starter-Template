@@ -29,24 +29,22 @@
 
     <div class="container">
         
-        <aside class="sidebar">
+        
+        <nav class="sidebar">
+        <ul>
             
-            <ul class="nav-list">
+            <li>
+                <a href="/docs/index.html">Overview</a>
                 
-                    
-                    <li class="nav-item">
-                        <a href="/">Welcome to the DevEx Starter Template docs</a>
-                    </li>
-                    
+            </li>
+            
+            <li>
+                <a href="/docs/jekyll-server.html">Jekyll server</a>
                 
-                    
-                    <li class="nav-item">
-                        <a href="/jekyll-system.html/">Jekyll system</a>
-                    </li>
-                    
-                
-            </ul>
-          </aside>
+            </li>
+            
+        </ul>
+        </nav>
 
         <main class="content">
             <div class="markdown-body">
@@ -154,6 +152,20 @@
 <h3 id="github-actions">GitHub actions</h3>
 
 <p>GitHub Actions workflows are defined in the <code class="language-plaintext highlighter-rouge">.github/workflows</code> directory.</p>
+
+<p>The <strong>DevEx Starter Template</strong> includes the following workflows:</p>
+
+<ul>
+  <li>
+    <p><strong>Check Links</strong> — This workflow runs <code class="language-plaintext highlighter-rouge">htmlproofer</code> to check for broken links in the generated site whenever changes are pushed to the <code class="language-plaintext highlighter-rouge">main</code> branch.</p>
+  </li>
+  <li>
+    <p><strong>Generate PDF</strong> — This workflow generates a PDF version of the documentation site using <code class="language-plaintext highlighter-rouge">wkhtmltopdf</code> whenever changes are pushed to the <code class="language-plaintext highlighter-rouge">main</code> branch.</p>
+  </li>
+  <li>
+    <p>Others coming soon…</p>
+  </li>
+</ul>
 
 <h3 id="docker">Docker</h3>
 

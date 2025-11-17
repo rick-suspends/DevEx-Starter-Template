@@ -99,6 +99,14 @@ When you push changes to the repository, GitHub Actions workflows are triggered 
 
 GitHub Actions workflows are defined in the `.github/workflows` directory.
 
+The **DevEx Starter Template** includes the following workflows:
+
+- **Check Links** &mdash; This workflow runs `htmlproofer` to check for broken links in the generated site whenever changes are pushed to the `main` branch.
+
+- **Generate PDF** &mdash; This workflow generates a PDF version of the documentation site using `wkhtmltopdf` whenever changes are pushed to the `main` branch.  
+
+- Others coming soon...
+
 ### Docker
 
 The Dockerfile and Docker Hub repository are used to build and store the Docker image for your project. The Dockerfile is located in the root of the repository, and the Docker Hub repository should be created under your Docker Hub account.

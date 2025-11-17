@@ -29,18 +29,23 @@
 
     <div class="container">
         
-        <aside class="sidebar">
-            
-            <ul class="nav-list">
-                {% for item in site.pages %}
-                    {% if item.layout == 'page' and item.parent == nil %}
-                    <li class="nav-item">
-                        <a href="{{ item.url | relative_url }}">{{ item.title }}</a>
-                    </li>
-                    {% endif %}
-                {% endfor %}
-            </ul>
-          </aside>
+        {% assign tree = site.data.tree %}
+        <nav class="sidebar">
+        <ul>
+            {% for item in tree %}
+            <li>
+                <a href="{{ item.url }}">{{ item.title }}</a>
+                {% if item.children %}
+                <ul>
+                    {% for child in item.children %}
+                    <li><a href="{{ child.url }}">{{ child.title }}</a></li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+        </nav>
 
         <main class="content">
             <div class="markdown-body">
