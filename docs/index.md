@@ -105,7 +105,7 @@ The **DevEx Starter Template** includes the following workflows:
 
 - **Generate PDF** &mdash; This workflow generates a PDF version of the documentation site using `wkhtmltopdf` whenever changes are pushed to the `main` branch. 
 
-  For example, to see the PDF for this documentation, check out the [PDF file in the GitHub Pages site](https://rick-suspends.github.io/DevEx-Starter-Template/docs/pdfs/DevEx-Starter-Template.pdf).
+  For example, to see the PDF for this documentation, check out the [PDF file in the GitHub Pages site](https://rick-suspends.github.io/DevEx-Starter-Template/pdfs/assembled.pdf).
 
 - Others coming soon...
 
