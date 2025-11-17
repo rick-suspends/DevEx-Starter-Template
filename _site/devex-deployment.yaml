@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: devex-validator-api
+  labels:
+    app: validator-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: validator-api
+  template:
+    metadata:
+      labels:
+        app: validator-api
+    spec:
+      containers:
+      - name: validator-api
+        # IMPORTANT: This must be the public image you pushed to Docker Hub
+        image: richardmallery/devex-docs-validator:latest 
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        # The readiness/liveness checks ensure Kubernetes knows when your app is truly ready
+        readinessProbe:
+          httpGet:
+            path: /status
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /status
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 20
