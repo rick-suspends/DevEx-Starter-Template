@@ -11,6 +11,10 @@ on:
 jobs:
   build_pdf:
     runs-on: ubuntu-latest
+    
+    # ADD THESE PERMISSIONS HERE!
+    permissions:
+      contents: write # This grants write access to the GITHUB_TOKEN for repository contents
 
     steps:
       - name: Checkout repository
