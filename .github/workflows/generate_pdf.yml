@@ -38,15 +38,31 @@ jobs:
           #    This is essential as newer Ubuntu versions (like noble/24.04 or jammy/22.04) don't include libssl1.1.
           echo "Installing libssl1.1 dependency..."
           wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2_amd64.deb -O libssl1.1.deb
-          sudo dpkg -i libssl1.1.deb || true # Install, allowing dpkg to complain but not fail the step
+          sudo dpkg -i libssl1.1.deb # Install, will fail if dpkg finds serious issues
           
           # 3. Install wkhtmltopdf using apt. This will now find the required libssl1.1.
           echo "Installing wkhtmltopdf..."
           sudo apt install -y -f ./wkhtmltox.deb # '-f' attempts to fix broken dependencies
           
-          # 4. Verify installation and path
-          which wkhtmltopdf
-          wkhtmltopdf --version
+          # 4. Ensure wkhtmltopdf is in a standard PATH location
+          #    Sometimes it's installed to /usr/local/bin, sometimes to /usr/bin directly.
+          #    We'll check and link if necessary.
+          if [ ! -f "/usr/bin/wkhtmltopdf" ]; then
+              echo "wkhtmltopdf not found in /usr/bin, checking /usr/local/bin..."
+              if [ -f "/usr/local/bin/wkhtmltopdf" ]; then
+                  echo "Found wkhtmltopdf in /usr/local/bin, creating symlink to /usr/bin."
+                  sudo ln -s /usr/local/bin/wkhtmltopdf /usr/bin/wkhtmltopdf
+              else
+                  echo "Error: wkhtmltopdf not found in /usr/bin or /usr/local/bin after installation."
+                  exit 1 # Fail the step if wkhtmltopdf binary is genuinely missing
+              fi
+          fi
+
+          # 5. Verify installation and path with debug output
+          echo "PATH is: $PATH"
+          echo "Checking if wkhtmltopdf is executable and in PATH:"
+          which wkhtmltopdf || { echo "ERROR: wkhtmltopdf not found in PATH after install and linking attempts!"; exit 1; }
+          wkhtmltopdf --version || { echo "ERROR: wkhtmltopdf failed to run after install!"; exit 1; }
           
       - name: Create pdfs directory
         run: mkdir -p docs/pdfs
