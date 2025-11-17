@@ -1,0 +1,53 @@
+name: Generate Documentation PDF
+
+on:
+  push:
+    branches:
+      - main # Trigger on pushes to the main branch
+  pull_request:
+    branches:
+      - main # Trigger on pull requests targeting the main branch
+
+jobs:
+  build_pdf:
+    runs-on: ubuntu-latest # Use the latest Ubuntu runner
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Required for pushing changes later
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # Ensure full history for accurate Git operations if needed
+          fetch-depth: 0
+
+      - name: Install wkhtmltopdf and xvfb
+        run: |
+          sudo apt update
+          sudo apt install -y wkhtmltopdf xvfb
+          which wkhtmltopdf # Verify installation path
+
+      - name: Run PDF assembly script
+        run: |
+          # Make the script executable
+          chmod +x ./bin/assemble_docs_body.sh
+          # Execute the script
+          ./bin/assemble_docs_body.sh
+        working-directory: ${{ github.workspace }} # Ensure we start from the repo root
+
+      - name: Upload PDF artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: assembled-documentation-pdf
+          path: docs/pdfs/assembled.pdf # Path where your script outputs the PDF
+
+      - name: Commit and push generated PDF to repo
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' # Only push on direct pushes to main
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/pdfs/assembled.pdf
+          git diff --quiet --exit-code || git commit -m " chore(docs): Update assembled documentation PDF [skip ci]"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

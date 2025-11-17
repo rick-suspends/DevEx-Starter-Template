@@ -3,16 +3,16 @@
 # Exit immediately if a command exits with a non-zero status.
 set -e
 
-# Script to assemble body content from Jekyll's _site/*.html files
+# Script to assemble main content from Jekyll's _site/*.html files
 # into a single, valid HTML file, then convert to PDF using wkhtmltopdf.
-# This version uses:
-# 1. A temporary Python HTTP server to serve the Jekyll _site directory
-#    (essential for wkhtmltopdf to find assets like CSS and images via HTTP).
-# 2. xvfb-run to provide a virtual display environment (preventing crashes
-#    in headless environments like your VM).
-# 3. Places the intermediate HTML in the 'bin' directory.
-# 4. wkhtmltopdf directly reads the intermediate HTML locally, but uses the
-#    HTTP server via <base href> for assets.
+# This version ensures:
+# 1. Only the content within <main class="content"> tags is extracted.
+# 2. The intermediate assembled HTML is created ONLY in the 'bin' directory.
+# 3. A temporary Python HTTP server serves the Jekyll _site directory (for assets).
+# 4. xvfb-run provides a virtual display environment for wkhtmltopdf.
+# 5. wkhtmltopdf reads the intermediate HTML locally, but fetches assets via the HTTP server (using <base href>).
+# 6. The final PDF is output to the 'docs/pdfs' directory.
+# 7. No extraneous header or description is added to the assembled content.
 
 # --- Configuration ---
 # Path to the script's own directory (e.g., 'bin')
@@ -28,9 +28,9 @@ DOCS_SITE_DIR="$PROJECT_ROOT/$DOCS_SITE_RELATIVE_PATH"
 # New output directory for PDFs, relative to PROJECT_ROOT
 PDF_OUTPUT_DIR="$PROJECT_ROOT/docs/pdfs"
 
-# Intermediate HTML filename (will be created in SCRIPT_DIR)
+# Intermediate HTML filename (will be created ONLY in SCRIPT_DIR - the bin directory)
 INTERMEDIATE_HTML_FILE="assembled_docs_body.html"
-INTERMEDIATE_HTML_PATH="$SCRIPT_DIR/$INTERMEDIATE_HTML_FILE" # CORRECTED: In bin dir
+INTERMEDIATE_HTML_PATH="$SCRIPT_DIR/$INTERMEDIATE_HTML_FILE"
 
 # Final Output PDF filename (will be created in PDF_OUTPUT_DIR)
 OUTPUT_PDF_FILE="$PDF_OUTPUT_DIR/assembled.pdf"
@@ -55,7 +55,7 @@ fi
 # Initialize an empty string to hold all extracted body content
 ALL_BODY_CONTENT=""
 
-echo "Extracting main content from HTML files in $DOCS_SITE_DIR..."
+echo "Extracting content only from <main class=\"content\"> tags in HTML files within $DOCS_SITE_DIR..."
 for html_file in "$DOCS_SITE_DIR"/*.html; do
   if [ -f "$html_file" ]; then
     # Extract content between <main class="content"> and </main>
@@ -75,7 +75,7 @@ for html_file in "$DOCS_SITE_DIR"/*.html; do
 done
 
 if [ -z "$ALL_BODY_CONTENT" ]; then
-  echo "WARNING: No body content was extracted. The resulting PDF might be empty or contain only boilerplate." >&2
+  echo "WARNING: No main content was extracted. The resulting PDF might be empty or contain only boilerplate." >&2
 fi
 
 # Create the intermediate HTML file directly in the SCRIPT_DIR (bin directory)
@@ -109,8 +109,6 @@ cat <<EOF > "$INTERMEDIATE_HTML_PATH"
     <base href="http://localhost:$HTTP_SERVER_PORT/" />
 </head>
 <body>
-    <h1>Assembled Documentation Content</h1>
-    <p>This file contains the combined content from your Jekyll pages, excluding site headers/footers/sidebars.</p>
     <div class="combined-content">
 $(echo -e "$ALL_BODY_CONTENT")
     </div>
@@ -121,10 +119,11 @@ EOF
 echo "Intermediate HTML created: $INTERMEDIATE_HTML_PATH"
 
 # --- Start a temporary Python HTTP server ---
-# We now start the server directly in the DOCS_SITE_DIR.
-# This makes Jekyll _site assets accessible at http://localhost:8000/assets/...
+# We start the server directly in the DOCS_SITE_DIR.
+# This makes Jekyll _site assets (like /assets/css and /assets/images) accessible
+# at http://localhost:8000/assets/...
 echo "Starting temporary Python HTTP server in $DOCS_SITE_DIR on port $HTTP_SERVER_PORT..."
-(cd "$DOCS_SITE_DIR" && python3 -m http.server "$HTTP_SERVER_PORT" > "$SCRIPT_DIR/http_server_stdout.log" 2> "$SCRIPT_DIR/http_server_stderr.log" &) # <--- Corrected: cd into DOCS_SITE_DIR
+(cd "$DOCS_SITE_DIR" && python3 -m http.server "$HTTP_SERVER_PORT" > "$SCRIPT_DIR/http_server_stdout.log" 2> "$SCRIPT_DIR/http_server_stderr.log" &)
 
 # Wait a bit longer for the server to spin up
 sleep 3
@@ -140,11 +139,11 @@ fi
 echo "Python HTTP server confirmed running on port $HTTP_SERVER_PORT (PID: $PYTHON_PID)."
 
 # --- Convert HTML to PDF using wkhtmltopdf via local file path and xvfb-run ---
-# wkhtmltopdf reads the intermediate HTML file directly from the local filesystem,
-# but the <base href> in that HTML tells it to fetch assets from the HTTP server.
+# wkhtmltopdf reads the intermediate HTML file directly from the local filesystem ($INTERMEDIATE_HTML_PATH),
+# but the <base href> in that HTML ($HTTP_SERVER_PORT) tells it where to fetch assets.
 echo "Converting via wkhtmltopdf with xvfb-run from $INTERMEDIATE_HTML_PATH to $OUTPUT_PDF_FILE..."
 xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" \
-  /usr/bin/wkhtmltopdf "$INTERMEDIATE_HTML_PATH" "$OUTPUT_PDF_FILE" # <--- CORRECTED: Use local path for HTML input
+  /usr/bin/wkhtmltopdf "$INTERMEDIATE_HTML_PATH" "$OUTPUT_PDF_FILE"
 
 # --- Stop the Python HTTP server ---
 echo "Stopping Python HTTP server (PID: $PYTHON_PID)..."
