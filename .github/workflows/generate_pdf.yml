@@ -19,20 +19,19 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      # NEW STEP: Use a dedicated GitHub Action for wkhtmltopdf installation
+      # CORRECTED STEP: Use the widely available 'peaceiris/actions-wkhtmltopdf' action
       - name: Install wkhtmltopdf and xvfb via action
-        uses: wkhtmltopdf/wkhtmltopdf-action@v1.0.0 # Use the official action
+        uses: peaceiris/actions-wkhtmltopdf@v2 # <--- CORRECTED ACTION NAME
         with:
           wkhtmltopdf_version: "0.12.6" # Specify a stable version
           install_xvfb: true # Request XVFB to be installed by the action
-        # The action handles apt update and dependencies internally for wkhtmltopdf and xvfb
+        # This action handles apt update and most dependencies internally for wkhtmltopdf and xvfb
 
-      # Original dependencies for good measure, though the action might cover some
-      # (Removed apt update as the action should handle it, added fontconfig explicitly)
-      - name: Install additional system fonts (if needed, otherwise remove)
+      # This step for additional fonts might still be useful, keep it for now.
+      - name: Install additional system fonts (if needed)
         run: |
           sudo apt install -y fontconfig xfonts-base xfonts-75dpi
-        # This step can be removed if wkhtmltopdf works without it.
+        # Remove this step if wkhtmltopdf works and PDF rendering is fine without it.
 
       - name: Run PDF assembly script
         run: |
