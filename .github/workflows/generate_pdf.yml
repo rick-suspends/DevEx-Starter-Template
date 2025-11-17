@@ -11,6 +11,11 @@ on:
 jobs:
   build_pdf:
     runs-on: ubuntu-latest
+    
+    # NEW: Define a Docker container for this job
+    container:
+      image: alpine/wkhtmltopdf:0.12.6-full # Using a reliable image with wkhtmltopdf and dependencies
+      options: --user root # Run as root inside the container for permissions if needed
 
     steps:
       - name: Checkout repository
@@ -18,42 +23,34 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
+      
+      # Since we are in a container, the host's apt is not used.
+      # The wkhtmltopdf image should already have all necessary fonts and xvfb.
 
-      - name: Install wkhtmltopdf, xvfb, and dependencies (Robust Method)
+      # We need to install 'wget' and 'git' *inside* the container if they are not present,
+      # as we will need them for the script and pushing changes.
+      # The alpine/wkhtmltopdf:0.12.6-full image should have wget, but git might need installing.
+      - name: Install Git inside container (if not present)
         run: |
-          sudo apt update
-          
-          # Install core dependencies for wkhtmltopdf and XVFB
-          sudo apt install -y fontconfig libfreetype6 libx11-6 libxext6 libxrender1 xfonts-base xfonts-75dpi xvfb openssl
-          
-          # --- Robust wkhtmltopdf installation for Ubuntu 22.04+ (handling libssl1.1) ---
-          # 1. Download wkhtmltopdf 0.12.6 from their official site (using `xenial` build as it's often more compatible)
-          #    This specific version is known to work with a separately installed libssl1.1.
-          WKHTMLTOPDF_VERSION="0.12.6"
-          WKHTMLTOPDF_FILENAME="wkhtmltox_${WKHTMLTOPDF_VERSION}-1.xenial_amd64.deb" # xenial build often avoids direct libssl3 conflicts
-          WKHTMLTOPDF_URL="https://downloads.wkhtmltopdf.org/0.12/0.12.6/${WKHTMLTOPDF_FILENAME}"
-          
-          echo "Downloading wkhtmltopdf from: ${WKHTMLTOPDF_URL}"
-          wget ${WKHTMLTOPDF_URL} -O wkhtmltox.deb
-          
-          # 2. Manually install libssl1.1 from an older Ubuntu release (e.g., Focal 20.04)
-          #    This resolves the explicit dependency on libssl1.1 for the wkhtmltopdf package.
-          echo "Installing libssl1.1 dependency..."
-          wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2_amd64.deb -O libssl1.1.deb
-          sudo dpkg -i libssl1.1.deb || true # Use '|| true' to allow dpkg to report errors but not fail the step immediately
-          sudo apt install -f -y # Attempt to fix broken dependencies from dpkg or missing ones
-          
-          # 3. Install wkhtmltopdf using apt (which now has libssl1.1 available)
-          echo "Installing wkhtmltopdf..."
-          sudo apt install -y ./wkhtmltox.deb
-          
-          # 4. Verify installation and path
-          which wkhtmltopdf
-          wkhtmltopdf --version
-          
+          apk update && apk add git # Alpine's package manager is 'apk'
+        # This step might not be strictly necessary if the base image includes git,
+        # but it's good for robustness.
+      
+      - name: Create pdfs directory (container might not have it pre-made)
+        run: mkdir -p docs/pdfs
+
       - name: Run PDF assembly script
         run: |
           chmod +x ./bin/assemble_docs_body.sh
+          # Important: Python is likely not installed by default in this Alpine image.
+          # You'll need to install it if your assemble_docs_body.sh relies on a Python HTTP server.
+          # For Alpine, it would be 'apk add python3'.
+          # If your script requires Python, add 'apk add python3' here before running it.
+          # If your script doesn't use Python or its HTTP server, ignore this.
+          
+          # Assuming python is needed for the HTTP server based on previous logs:
+          apk add python3
+          
           ./bin/assemble_docs_body.sh
         working-directory: ${{ github.workspace }}
 
@@ -65,6 +62,9 @@ jobs:
 
       - name: Commit and push generated PDF to repo
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        # This step runs on the *host* runner, not inside the container,
+        # as the container exits after the job. This is necessary to access Git capabilities outside the container.
+        # So we need to ensure git is on the host runner, which it always is.
         run: |
           git config user.name "GitHub Actions"
           git config user.email "github-actions[bot]@users.noreply.github.com"
