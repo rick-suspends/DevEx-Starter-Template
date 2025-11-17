@@ -22,20 +22,21 @@ jobs:
       - name: Install wkhtmltopdf, xvfb, and dependencies
         run: |
           sudo apt update
+          # Install core dependencies needed by wkhtmltopdf
           sudo apt install -y fontconfig libfreetype6 libx11-6 libxext6 libxrender1 xfonts-base xfonts-75dpi xvfb
           
-          # Download a static build of wkhtmltopdf for robust installation
-          # Using version 0.12.5 which is very stable and widely available for 'bionic' (Ubuntu 18.04),
-          # which is often compatible with 'ubuntu-latest' runners.
-          WKHTMLTOPDF_VERSION="0.12.5"
-          WKHTMLTOPDF_URL="https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}-1.bionic_amd64.deb"
+          # Download a static build of wkhtmltopdf specifically for 'jammy' (Ubuntu 22.04),
+          # which is more likely to match the 'ubuntu-latest' runner's environment (Noble 24.04 is very similar).
+          # This version should correctly depend on libssl3 or a compatible version.
+          WKHTMLTOPDF_VERSION="0.12.6-1" # The version string used in the package name
+          WKHTMLTOPDF_URL="https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.jammy_amd64.deb" # <--- CORRECTED URL for jammy
           
           echo "Downloading wkhtmltopdf from: ${WKHTMLTOPDF_URL}"
           wget ${WKHTMLTOPDF_URL} -O wkhtmltox.deb
           
           echo "Installing wkhtmltopdf..."
-          # Use apt to install the local .deb file, which handles dependencies better
-          sudo apt install -y ./wkhtmltox.deb # <--- CHANGED INSTALLATION COMMAND
+          # Use apt to install the local .deb file, which handles dependencies automatically
+          sudo apt install -y ./wkhtmltox.deb
           
           # Verify installation and path
           which wkhtmltopdf
