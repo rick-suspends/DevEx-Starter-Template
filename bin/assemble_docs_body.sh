@@ -53,11 +53,14 @@ fi
 # Initialize an empty string to hold all extracted body content
 ALL_BODY_CONTENT=""
 
-echo "Extracting body content from HTML files in $DOCS_SITE_DIR..."
+echo "Extracting main content from HTML files in $DOCS_SITE_DIR..."
 for html_file in "$DOCS_SITE_DIR"/*.html; do
   if [ -f "$html_file" ]; then
-    body_content=$(awk '/<body[^>]*>/, /<\/body>/ {
-                           if (! /<body[^>]*>/ && ! /<\/body>/) {
+    # Extract content between <main class="content"> and </main>
+    # This specifically targets the main article content, excluding headers, footers, sidebars.
+    body_content=$(awk '/<main class="content"[^>]*>/, /<\/main>/ {
+                           # Only print lines that are NOT the opening or closing tag themselves
+                           if (! /<main class="content"[^>]*>/ && ! /<\/main>/) {
                                print $0
                            }
                        }' "$html_file")
