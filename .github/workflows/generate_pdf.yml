@@ -16,33 +16,47 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # Required for pushing changes later
           token: ${{ secrets.GITHUB_TOKEN }}
-          # Ensure full history for accurate Git operations if needed
           fetch-depth: 0
 
-      - name: Install wkhtmltopdf and xvfb
+      - name: Install wkhtmltopdf, xvfb, and dependencies
         run: |
           sudo apt update
-          sudo apt install -y wkhtmltopdf xvfb
-          which wkhtmltopdf # Verify installation path
+          sudo apt install -y fontconfig libfreetype6 libx11-6 libxext6 libxrender1 xfonts-base xfonts-75dpi xvfb
+          
+          # Download a static build of wkhtmltopdf for robust installation
+          # Using version 0.12.6 which is generally stable and reliable
+          WKHTMLTOPDF_VERSION="0.12.6-1"
+          WKHTMLTOPDF_URL="https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.jammy_amd64.deb"
+          
+          echo "Downloading wkhtmltopdf from: ${WKHTMLTOPDF_URL}"
+          wget ${WKHTMLTOPDF_URL} -O wkhtmltox.deb
+          
+          echo "Installing wkhtmltopdf..."
+          sudo dpkg -i wkhtmltox.deb
+          sudo apt install -f -y # Fix broken dependencies
+          
+          # Verify installation and path
+          which wkhtmltopdf
+          wkhtmltopdf --version
+          
+        # Ensure wkhtmltopdf is in /usr/local/bin, which is typically in PATH
+        # The .deb package usually installs it to /usr/local/bin/
 
       - name: Run PDF assembly script
         run: |
-          # Make the script executable
           chmod +x ./bin/assemble_docs_body.sh
-          # Execute the script
           ./bin/assemble_docs_body.sh
-        working-directory: ${{ github.workspace }} # Ensure we start from the repo root
+        working-directory: ${{ github.workspace }}
 
       - name: Upload PDF artifact
         uses: actions/upload-artifact@v4
         with:
           name: assembled-documentation-pdf
-          path: docs/pdfs/assembled.pdf # Path where your script outputs the PDF
+          path: docs/pdfs/assembled.pdf
 
       - name: Commit and push generated PDF to repo
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' # Only push on direct pushes to main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           git config user.name "GitHub Actions"
           git config user.email "github-actions[bot]@users.noreply.github.com"
