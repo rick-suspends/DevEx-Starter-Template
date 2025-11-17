@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: devex-validator-api
+spec:
+  # IMPORTANT: Must be NodePort for external access through the host firewall
+  type: NodePort 
+  selector:
+    # Must match the Deployment's labels
+    app: validator-api
+  ports:
+    # Port 80 is the cluster-internal Service port
+    - protocol: TCP
+      port: 80
+      # TargetPort must match the containerPort defined in the Deployment
+      targetPort: 8000 
+      # NodePort will be randomly assigned here (e.g., 30000-32767)
