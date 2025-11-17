@@ -19,29 +19,21 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Install wkhtmltopdf, xvfb, and dependencies
+      # NEW STEP: Use a dedicated GitHub Action for wkhtmltopdf installation
+      - name: Install wkhtmltopdf and xvfb via action
+        uses: wkhtmltopdf/wkhtmltopdf-action@v1.0.0 # Use the official action
+        with:
+          wkhtmltopdf_version: "0.12.6" # Specify a stable version
+          install_xvfb: true # Request XVFB to be installed by the action
+        # The action handles apt update and dependencies internally for wkhtmltopdf and xvfb
+
+      # Original dependencies for good measure, though the action might cover some
+      # (Removed apt update as the action should handle it, added fontconfig explicitly)
+      - name: Install additional system fonts (if needed, otherwise remove)
         run: |
-          sudo apt update
-          # Install core dependencies needed by wkhtmltopdf
-          sudo apt install -y fontconfig libfreetype6 libx11-6 libxext6 libxrender1 xfonts-base xfonts-75dpi xvfb
-          
-          # Download a static build of wkhtmltopdf specifically for 'jammy' (Ubuntu 22.04),
-          # which is more likely to match the 'ubuntu-latest' runner's environment (Noble 24.04 is very similar).
-          # This version should correctly depend on libssl3 or a compatible version.
-          WKHTMLTOPDF_VERSION="0.12.6-1" # The version string used in the package name
-          WKHTMLTOPDF_URL="https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.jammy_amd64.deb" # <--- CORRECTED URL for jammy
-          
-          echo "Downloading wkhtmltopdf from: ${WKHTMLTOPDF_URL}"
-          wget ${WKHTMLTOPDF_URL} -O wkhtmltox.deb
-          
-          echo "Installing wkhtmltopdf..."
-          # Use apt to install the local .deb file, which handles dependencies automatically
-          sudo apt install -y ./wkhtmltox.deb
-          
-          # Verify installation and path
-          which wkhtmltopdf
-          wkhtmltopdf --version
-          
+          sudo apt install -y fontconfig xfonts-base xfonts-75dpi
+        # This step can be removed if wkhtmltopdf works without it.
+
       - name: Run PDF assembly script
         run: |
           chmod +x ./bin/assemble_docs_body.sh
