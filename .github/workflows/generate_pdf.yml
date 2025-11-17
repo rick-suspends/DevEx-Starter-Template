@@ -25,10 +25,10 @@ jobs:
           sudo apt install -y fontconfig libfreetype6 libx11-6 libxext6 libxrender1 xfonts-base xfonts-75dpi xvfb
           
           # Download a static build of wkhtmltopdf for robust installation
-          # Using version 0.12.6 which is generally stable and reliable
-          # Corrected URL for the 0.12.6 release for bionic (often compatible with ubuntu-latest)
-          WKHTMLTOPDF_VERSION="0.12.6" # Note: version in URL is 0.12.6-1.bionic
-          WKHTMLTOPDF_URL="https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}-1.bionic_amd64.deb" # <--- UPDATED URL
+          # Using version 0.12.5 which is very stable and widely available for 'bionic' (Ubuntu 18.04),
+          # which is often compatible with 'ubuntu-latest' runners.
+          WKHTMLTOPDF_VERSION="0.12.5"
+          WKHTMLTOPDF_URL="https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}-1.bionic_amd64.deb" # <--- UPDATED URL and VERSION
           
           echo "Downloading wkhtmltopdf from: ${WKHTMLTOPDF_URL}"
           wget ${WKHTMLTOPDF_URL} -O wkhtmltox.deb
