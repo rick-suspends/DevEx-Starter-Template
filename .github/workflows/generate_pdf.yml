@@ -12,9 +12,9 @@ jobs:
   build_pdf:
     runs-on: ubuntu-latest
     
-    # NEW: Define a Docker container for this job
+    # CORRECTED: Define a Docker container for this job with the correct image
     container:
-      image: alpine/wkhtmltopdf:0.12.6-full # Using a reliable image with wkhtmltopdf and dependencies
+      image: madnight/docker-wkhtmltopdf:0.12.6-full # <--- CORRECTED IMAGE NAME
       options: --user root # Run as root inside the container for permissions if needed
 
     steps:
@@ -24,33 +24,18 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
       
-      # Since we are in a container, the host's apt is not used.
-      # The wkhtmltopdf image should already have all necessary fonts and xvfb.
-
-      # We need to install 'wget' and 'git' *inside* the container if they are not present,
-      # as we will need them for the script and pushing changes.
-      # The alpine/wkhtmltopdf:0.12.6-full image should have wget, but git might need installing.
-      - name: Install Git inside container (if not present)
+      # For madnight/docker-wkhtmltopdf, it's typically based on Debian/Ubuntu, so 'apt' is used.
+      # It usually comes with Git, but installing Python3 might still be needed.
+      - name: Install Python3 inside container (if not present)
         run: |
-          apk update && apk add git # Alpine's package manager is 'apk'
-        # This step might not be strictly necessary if the base image includes git,
-        # but it's good for robustness.
+          apt update && apt install -y python3 # Use 'apt' for Debian-based images
       
       - name: Create pdfs directory (container might not have it pre-made)
         run: mkdir -p docs/pdfs
 
       - name: Run PDF assembly script
         run: |
-          chmod +x ./bin/assemble_docs_body.sh
-          # Important: Python is likely not installed by default in this Alpine image.
-          # You'll need to install it if your assemble_docs_body.sh relies on a Python HTTP server.
-          # For Alpine, it would be 'apk add python3'.
-          # If your script requires Python, add 'apk add python3' here before running it.
-          # If your script doesn't use Python or its HTTP server, ignore this.
-          
-          # Assuming python is needed for the HTTP server based on previous logs:
-          apk add python3
-          
+          # The script will now use wkhtmltopdf that's already in the container's PATH
           ./bin/assemble_docs_body.sh
         working-directory: ${{ github.workspace }}
 
@@ -62,9 +47,6 @@ jobs:
 
       - name: Commit and push generated PDF to repo
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        # This step runs on the *host* runner, not inside the container,
-        # as the container exits after the job. This is necessary to access Git capabilities outside the container.
-        # So we need to ensure git is on the host runner, which it always is.
         run: |
           git config user.name "GitHub Actions"
           git config user.email "github-actions[bot]@users.noreply.github.com"
