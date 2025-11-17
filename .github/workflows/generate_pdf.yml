@@ -3,14 +3,14 @@ name: Generate Documentation PDF
 on:
   push:
     branches:
-      - main # Trigger on pushes to the main branch
+      - main
   pull_request:
     branches:
-      - main # Trigger on pull requests targeting the main branch
+      - main
 
 jobs:
   build_pdf:
-    runs-on: ubuntu-latest # Use the latest Ubuntu runner
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -26,8 +26,9 @@ jobs:
           
           # Download a static build of wkhtmltopdf for robust installation
           # Using version 0.12.6 which is generally stable and reliable
-          WKHTMLTOPDF_VERSION="0.12.6-1"
-          WKHTMLTOPDF_URL="https://github.com/wkhtmltopdf/packaging/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}.jammy_amd64.deb"
+          # Corrected URL for the 0.12.6 release for bionic (often compatible with ubuntu-latest)
+          WKHTMLTOPDF_VERSION="0.12.6" # Note: version in URL is 0.12.6-1.bionic
+          WKHTMLTOPDF_URL="https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}-1.bionic_amd64.deb" # <--- UPDATED URL
           
           echo "Downloading wkhtmltopdf from: ${WKHTMLTOPDF_URL}"
           wget ${WKHTMLTOPDF_URL} -O wkhtmltox.deb
@@ -40,9 +41,6 @@ jobs:
           which wkhtmltopdf
           wkhtmltopdf --version
           
-        # Ensure wkhtmltopdf is in /usr/local/bin, which is typically in PATH
-        # The .deb package usually installs it to /usr/local/bin/
-
       - name: Run PDF assembly script
         run: |
           chmod +x ./bin/assemble_docs_body.sh
