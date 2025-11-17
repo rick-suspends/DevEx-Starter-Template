@@ -1,0 +1,5 @@
+127.0.0.1 - - [17/Nov/2025 03:40:22] "GET /assembled_docs_body.html HTTP/1.1" 200 -
+127.0.0.1 - - [17/Nov/2025 03:40:22] "GET /assets/images/md.png HTTP/1.1" 200 -
+127.0.0.1 - - [17/Nov/2025 03:40:22] "GET /assets/images/html-css-js.png HTTP/1.1" 200 -
+127.0.0.1 - - [17/Nov/2025 03:40:22] "GET /assets/images/jekyll-full.png HTTP/1.1" 200 -
+127.0.0.1 - - [17/Nov/2025 03:40:22] "GET /assets/images/github.png HTTP/1.1" 200 -
