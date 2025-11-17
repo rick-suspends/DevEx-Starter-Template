@@ -52,6 +52,8 @@
 
 <div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/docs
     ├── _config.yml           # Jekyll configuration file
+    ├── _data                 # Data files for Jekyll
+    │     └── tree.yml        # Site structure for sidebar navigation
     ├── _layouts              # Jekyll layout templates
     │     └── page.html       # Layout for documentation pages
     ├── _includes             # Jekyll includes (reusable components)
@@ -72,6 +74,9 @@
     <p><code class="language-plaintext highlighter-rouge">_config.yml</code>: This file contains configuration settings for the Jekyll site, and is also the place to define external resources such as plugins and themes.</p>
 
     <p>The current configuration defines the minimum settings: where the source files are located and the destination for the generated site.</p>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">_data/tree.yml</code>: This file defines the structure of the documentation site for generating the sidebar navigation. It uses a simple YAML format to list the titles and URLs of the pages in the documentation.</p>
   </li>
   <li>
     <p><code class="language-plaintext highlighter-rouge">_layouts</code>: This directory holds layout templates that define the structure of your documentation pages. The <code class="language-plaintext highlighter-rouge">page.html</code> layout is the default for rendering individual documentation pages.</p>

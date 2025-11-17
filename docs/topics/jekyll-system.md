@@ -9,6 +9,8 @@ permalink: jekyll-system.html
 ```text
 /docs
     ├── _config.yml           # Jekyll configuration file
+    ├── _data                 # Data files for Jekyll
+    │     └── tree.yml        # Site structure for sidebar navigation
     ├── _layouts              # Jekyll layout templates
     │     └── page.html       # Layout for documentation pages
     ├── _includes             # Jekyll includes (reusable components)
@@ -27,6 +29,8 @@ permalink: jekyll-system.html
 - `_config.yml`: This file contains configuration settings for the Jekyll site, and is also the place to define external resources such as plugins and themes.
 
   The current configuration defines the minimum settings: where the source files are located and the destination for the generated site. 
+
+- `_data/tree.yml`: This file defines the structure of the documentation site for generating the sidebar navigation. It uses a simple YAML format to list the titles and URLs of the pages in the documentation.
 
 - `_layouts`: This directory holds layout templates that define the structure of your documentation pages. The `page.html` layout is the default for rendering individual documentation pages.
 
