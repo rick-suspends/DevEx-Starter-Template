@@ -6,7 +6,7 @@ permalink: /
 
 # {{ page.title }}
 
-This project has three main sections: 
+This project has the following main sections: 
 - **Jekyll-based documentation content** &mdash; Markdown -> Jekyll -> HTML/JS/CSS -> GitHub Pages
 - **Python tools** &mdash; Validate the Markdown, links, and assets of the documentation content
 - **CI/CD flow** &mdash; GitHub Action workflows to run the Python tools before rebuilding and updating the Docker image, and before pushing doc changes to GitHub Pages.
