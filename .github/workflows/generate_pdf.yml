@@ -11,10 +11,6 @@ on:
 jobs:
   build_pdf:
     runs-on: ubuntu-latest
-    
-    container:
-      image: madnight/docker-wkhtmltopdf:0.12.6-alpine # CORRECTED IMAGE TAG
-      options: --user root
 
     steps:
       - name: Checkout repository
@@ -22,18 +18,44 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-      
-      # For Alpine-based images, 'apk' is the package manager.
-      # It usually comes with Git, but installing Python3 might still be needed.
-      - name: Install Python3 inside container (if not present)
+
+      - name: Install build dependencies and compile wkhtmltopdf from source
         run: |
-          apk update && apk add python3 # Use 'apk' for Alpine-based images
-      
-      - name: Create pdfs directory (container might not have it pre-made)
+          sudo apt update
+          
+          # Install essential build tools and libraries required for wkhtmltopdf
+          sudo apt install -y build-essential libssl-dev libxrender-dev xfonts-75dpi xfonts-base xvfb wget curl python3
+          
+          # Download wkhtmltopdf source code (version 0.12.6 is stable)
+          WKHTMLTOPDF_VERSION="0.12.6"
+          WKHTMLTOPDF_TARBALL="wkhtmltopdf-${WKHTMLTOPDF_VERSION}.tar.xz"
+          WKHTMLTOPDF_URL="https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/${WKHTMLTOPDF_VERSION}/${WKHTMLTOPDF_TARBALL}"
+          
+          echo "Downloading wkhtmltopdf source from: ${WKHTMLTOPDF_URL}"
+          wget ${WKHTMLTOPDF_URL} -O ${WKHTMLTOPDF_TARBALL}
+          
+          tar -xf ${WKHTMLTOPDF_TARBALL}
+          cd wkhtmltopdf-${WKHTMLTOPDF_VERSION}
+          
+          # Configure and compile
+          ./configure --prefix=/usr/local --enable-pdf --enable-image # Standard configuration
+          make
+          sudo make install
+          
+          # Link the binary to a standard PATH location if not already there
+          sudo ln -s /usr/local/bin/wkhtmltopdf /usr/bin/wkhtmltopdf
+          sudo ln -s /usr/local/bin/wkhtmltoimage /usr/bin/wkhtmltoimage
+          
+          # Verify installation
+          which wkhtmltopdf
+          wkhtmltopdf --version
+
+      - name: Create pdfs directory
         run: mkdir -p docs/pdfs
 
       - name: Run PDF assembly script
         run: |
+          # Your script now relies on the wkhtmltopdf binary compiled and installed above
           ./bin/assemble_docs_body.sh
         working-directory: ${{ github.workspace }}
 
