@@ -12,10 +12,9 @@ jobs:
   build_pdf:
     runs-on: ubuntu-latest
     
-    # CORRECTED: Define a Docker container for this job with the correct image
     container:
-      image: madnight/docker-wkhtmltopdf:0.12.6-full # <--- CORRECTED IMAGE NAME
-      options: --user root # Run as root inside the container for permissions if needed
+      image: madnight/docker-wkhtmltopdf:0.12.6 # CORRECTED IMAGE TAG
+      options: --user root
 
     steps:
       - name: Checkout repository
@@ -24,18 +23,15 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
       
-      # For madnight/docker-wkhtmltopdf, it's typically based on Debian/Ubuntu, so 'apt' is used.
-      # It usually comes with Git, but installing Python3 might still be needed.
       - name: Install Python3 inside container (if not present)
         run: |
-          apt update && apt install -y python3 # Use 'apt' for Debian-based images
+          apt update && apt install -y python3
       
       - name: Create pdfs directory (container might not have it pre-made)
         run: mkdir -p docs/pdfs
 
       - name: Run PDF assembly script
         run: |
-          # The script will now use wkhtmltopdf that's already in the container's PATH
           ./bin/assemble_docs_body.sh
         working-directory: ${{ github.workspace }}
 
