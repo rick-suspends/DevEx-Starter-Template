@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     
     container:
-      image: madnight/docker-wkhtmltopdf:0.12.6 # CORRECTED IMAGE TAG
+      image: madnight/docker-wkhtmltopdf:0.12.6-alpine # CORRECTED IMAGE TAG
       options: --user root
 
     steps:
@@ -23,9 +23,11 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
       
+      # For Alpine-based images, 'apk' is the package manager.
+      # It usually comes with Git, but installing Python3 might still be needed.
       - name: Install Python3 inside container (if not present)
         run: |
-          apt update && apt install -y python3
+          apk update && apk add python3 # Use 'apk' for Alpine-based images
       
       - name: Create pdfs directory (container might not have it pre-made)
         run: mkdir -p docs/pdfs
