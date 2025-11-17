@@ -28,14 +28,14 @@ jobs:
           # Using version 0.12.5 which is very stable and widely available for 'bionic' (Ubuntu 18.04),
           # which is often compatible with 'ubuntu-latest' runners.
           WKHTMLTOPDF_VERSION="0.12.5"
-          WKHTMLTOPDF_URL="https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}-1.bionic_amd64.deb" # <--- UPDATED URL and VERSION
+          WKHTMLTOPDF_URL="https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/${WKHTMLTOPDF_VERSION}/wkhtmltox_${WKHTMLTOPDF_VERSION}-1.bionic_amd64.deb"
           
           echo "Downloading wkhtmltopdf from: ${WKHTMLTOPDF_URL}"
           wget ${WKHTMLTOPDF_URL} -O wkhtmltox.deb
           
           echo "Installing wkhtmltopdf..."
-          sudo dpkg -i wkhtmltox.deb
-          sudo apt install -f -y # Fix broken dependencies
+          # Use apt to install the local .deb file, which handles dependencies better
+          sudo apt install -y ./wkhtmltox.deb # <--- CHANGED INSTALLATION COMMAND
           
           # Verify installation and path
           which wkhtmltopdf
