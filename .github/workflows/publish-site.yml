@@ -4,61 +4,43 @@ name: Build and Deploy Documentation
 on:
   push:
     branches:
-      - main
-  workflow_dispatch:
+      - main # Trigger when new source code is pushed to main
+  workflow_dispatch: # Allows manual triggering from the GitHub UI
 
 jobs:
   build_deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # Needed for the deployment action
+      pull-requests: write # For htmlproofer potentially, though primarily for job failure status
 
     steps:
       - name: 1. Checkout repository
         uses: actions/checkout@v4
+        # Note: No 'ref' needed here, as it defaults to the branch that triggered the workflow (main).
 
-      # ... (Steps 2, 2.1, 3 - Ruby, Jekyll gem, wkhtmltopdf install - unchanged) ...
+      # --- SETUP STEPS ---
 
-      - name: 4. Build Jekyll Site
-        working-directory: ${{ github.workspace }}
+      - name: 2. Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3' # Specific Ruby version required by the action
+
+      - name: 2.1 Install Jekyll Gem
         run: |
-          echo "Current directory for jekyll build: $(pwd)"
-          jekyll build --source ./docs --destination ./docs/_site
-          echo "Jekyll site built to docs/_site"
+          echo "Installing Jekyll gem..."
+          gem install jekyll
+          # Uncomment the line below if your Jekyll site uses specific github-pages plugins/themes
+          # echo "Installing github-pages gem..."
+          # gem install github-pages
+          echo "Jekyll gem installation complete."
 
-      # --- NEW DEBUG STEP HERE! ---
-      - name: 4.5 Debug docs/_site after Jekyll build
+      - name: 3. Install System Dependencies (for wkhtmltopdf, etc.)
         run: |
-          echo "Listing contents of docs/_site after Jekyll build:"
-          ls -R ./docs/_site || { echo "ERROR: ./docs/_site directory not found or empty after Jekyll build!"; exit 1; }
-          echo "Size of docs/_site:"
-          du -sh ./docs/_site || { echo "ERROR: Could not get size of ./docs/_site!"; exit 1; }
-        working-directory: ${{ github.workspace }}
+          echo "Updating apt packages and installing system dependencies..."
+          sudo apt update
+          # Install core wkhtmltopdf dependencies, XVFB, and python3 for the local HTTP server
+          sudo apt install -y fontconfig libfreetype6 libx11-6 libxext6 libxrender1 xfonts-base xfonts-75dpi xvfb python3-minimal
+          echo "Core dependencies installed."
 
-
-      - name: 5. Generate Documentation PDF
-        run: |
-          ./bin/assemble_docs_body.sh # Execute your script
-
-          if [ -f "docs/pdfs/assembled.pdf" ]; then
-            echo "PDF file (docs/pdfs/assembled.pdf) successfully created. Ignoring previous script exit code."
-            exit 0
-          else
-            echo "ERROR: PDF file (docs/pdfs/assembled.pdf) was NOT created, and script failed. Propagating failure."
-            exit 1
-          fi
-
-      - name: 6. Move PDF into _site for Deployment
-        run: |
-          mkdir -p docs/_site/pdfs
-          cp docs/pdfs/assembled.pdf docs/_site/pdfs/assembled.pdf
-          echo "PDF copied to docs/_site/pdfs/assembled.pdf"
-
-      - name: 6.7 Run HTMLProofer on generated site
-        # ... (htmlproofer step unchanged from last successful version) ...
-
-      - name: 6.9 Debug _site contents before deploy
-        # ... (debug step unchanged) ...
-          
-      - name: 7. Deploy _site to 'output' branch
-        # ... (deployment step unchanged) ...
+          # --- Robust wkhtmltopdf installation for Ubuntu 22.04+ (handling libssl1.1) ---
