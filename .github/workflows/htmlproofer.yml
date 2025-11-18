@@ -1,40 +1,64 @@
 # .github/workflows/documentation-quality-gate.yml
 name: Documentation Quality Gate (HTMLProofer)
-# ... (rest of the workflow YAML unchanged) ...
+
+on:
+  workflow_run:
+    workflows: ["Build and Deploy Documentation"] # Trigger after the deploy workflow completes
+    types:
+      - completed # Only run if the deployment workflow completed successfully
+    branches:
+      - main # Only run for the 'main' branch
+
+  workflow_dispatch: # Allow manual triggering of this workflow
+
+jobs:
+  validate_deployed_docs:
+    runs-on: ubuntu-latest # Use the latest Ubuntu runner
+    permissions:
+      contents: read # Only needs read access to checkout the 'output' branch
+
+    # This condition ensures the quality gate only runs if the 'Build and Deploy' workflow succeeded.
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Checkout Deployed Site into 'DevEx-Starter-Template' Subdirectory
         uses: actions/checkout@v4
         with:
-          ref: output
-          path: DevEx-Starter-Template # Clones the 'output' branch into this folder
+          ref: output # Checkout the 'output' branch (which contains your deployed site)
+          path: DevEx-Starter-Template # Checkout the contents into a subdirectory named after your repo
+        
+      - name: Debug: Verify Checkout Path and Initial HTML Content (Optional but Recommended)
+        run: |
+          echo "--- Debugging Checkout and Initial Content ---"
+          echo "Current working directory on runner: $(pwd)"
+          echo "Contents of the checked-out directory 'DevEx-Starter-Template':"
+          ls -R ./DevEx-Starter-Template || { echo "ERROR: 'DevEx-Starter-Template' directory not found or empty after checkout!"; exit 1; }
+          
+          echo "First 25 lines of ./DevEx-Starter-Template/index.html:"
+          head -n 25 ./DevEx-Starter-Template/index.html || { echo "ERROR: index.html not found in checked-out content!"; exit 1; }
+          
+          echo "Searching for '/DevEx-Starter-Template/' prefix in index.html (expecting to find it before sed):"
+          grep 'DevEx-Starter-Template/assets' ./DevEx-Starter-Template/index.html && \
+            echo "SUCCESS: '/DevEx-Starter-Template/' prefix found as expected." || \
+            echo "WARNING: '/DevEx-Starter-Template/' prefix NOT found. Check Jekyll build baseurl."
+          echo "--- End Debug ---"
 
       - name: 💣 Pre-Process HTML: Strip Jekyll Base URL Prefix 💣
-        # This step manually rewrites the files to fix the absolute vs. relative path conflict.
-        # It changes "/DevEx-Starter-Template/assets/..." to "/assets/..." across all HTML files.
+        # This step is crucial. It manually rewrites absolute paths in the HTML files.
+        # It changes paths like "/DevEx-Starter-Template/assets/..." to "/assets/..."
+        # This makes the paths root-relative to the 'DevEx-Starter-Template' directory,
+        # which HTML-Proofer can then correctly resolve against its 'directory' input.
         run: |
-          echo "Rewriting absolute paths in HTML files to remove Jekyll baseurl..."
+          echo "Starting HTML pre-processing to remove Jekyll baseurl prefix from internal links..."
+          # Find all HTML files within the checked-out directory and its subdirectories
+          # Use 'sed -i' to perform an in-place edit on the files.
+          # The regex 's/\/DevEx-Starter-Template\//\//g' replaces all occurrences of
+          # "/DevEx-Starter-Template/" with just "/"
           find ./DevEx-Starter-Template -type f -name "*.html" -print0 | xargs -0 \
             sed -i 's/\/DevEx-Starter-Template\//\//g'
-          echo "Path rewrite complete. Checking sample..."
+          echo "HTML path rewrite complete. Verifying changes on sample file..."
+          
           # Verify the rewrite on index.html
           grep 'DevEx-Starter-Template/assets' ./DevEx-Starter-Template/index.html && \
-            echo "ERROR: Prefix was NOT stripped (sed failed)." || \
-            echo "SUCCESS: Prefix stripped from sample file. Proceeding to htmlproofer."
-          
-      - name: ⚙️ Run HTMLProofer on Top-Level Deployed Docs
-        uses: chabad360/htmlproofer@v1
-        with:
-          # Now, the HTML content contains: "/assets/images/md.png"
-          # This will resolve correctly against the 'directory' path.
-          directory: ./DevEx-Starter-Template 
-          args: >-
-            --url-ignore "#.*"
-            --url-ignore "/cdn-cgi/#.*"
-            --allow-hash-href
-            --disable-external
-            --file-ignore "/pdfs/assembled.pdf"
-            --report-missing-names
-            --check-html
-            --check-favicon
-            # --- NO SWAP_URLS NEEDED! --- The files are already fixed.
+            echo "ERROR: The '/DevEx-Starter-Template/' prefix was NOT successfully stripped by sed. Sed command failed." || \
+            echo "SUCCESS: '/Dev
