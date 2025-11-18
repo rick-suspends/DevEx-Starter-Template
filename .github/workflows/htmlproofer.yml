@@ -37,7 +37,5 @@ jobs:
             --report-missing-names
             --check-html
             --check-favicon
-            # --- THE ESSENTIAL SWAP_URLS FOR PROJECT PAGES ---
-            # This maps the Jekyll baseurl prefix in the HTML to the local file system root.
+            # This is the key:
             --swap_urls "/^\\/DevEx-Starter-Template\\/:\\//"
-            # No --root_dir needed here, as directory is '.' and that's the local root.
