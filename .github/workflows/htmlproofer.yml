@@ -70,7 +70,7 @@ jobs:
           fi
           echo "--- End Debug ---"
 
-      - name: 💣 Pre-Process HTML: Strip Jekyll Base URL Prefix 💣
+      - name: Pre-Process HTML Strip Jekyll Base URL Prefix
         run: |
           echo "Starting HTML pre-processing to remove Jekyll baseurl prefix from internal links..."
           find ./DevEx-Starter-Template -type f -name "*.html" -print0 | xargs -0 \
