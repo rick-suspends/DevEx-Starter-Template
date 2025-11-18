@@ -1,4 +1,4 @@
-# .github/workflows/publish-site.yml 
+# .github/workflows/publish-site.yml
 name: Build and Deploy Documentation
 
 on:
