@@ -120,6 +120,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs/_site_deploy # This is the source directory whose contents will be published
           publish_branch: output           # This is the target branch on GitHub
+          destination_dir: DevEx-Starter-Template
           # destination_dir is REMOVED, so contents of publish_dir go to the ROOT of the output branch
           commit_message: "chore(docs): Auto-deploy documentation to GitHub Pages [skip ci]"
           force_orphan: true # Overwrites the output branch completely with new content
