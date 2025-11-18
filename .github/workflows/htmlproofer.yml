@@ -6,7 +6,7 @@ on:
   workflow_run:
     # List the exact name(s) of the workflows that, upon completion, should trigger this one.
     # THIS MUST EXACTLY MATCH THE 'name:' FIELD IN YOUR 'publish-site.yml'
-    workflows: ["Build and Deploy Documentation"] # <--- CONFIRM THIS EXACTLY MATCHES publish-site.yml's 'name:'
+    workflows: ["Build _site and generate PDF"] # <--- CONFIRM THIS EXACTLY MATCHES publish-site.yml's 'name:'
     types:
       - completed # Trigger when the specified workflow (Build and Deploy Documentation) completes
     branches:
