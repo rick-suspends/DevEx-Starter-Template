@@ -41,7 +41,7 @@ jobs:
           ref: output # Checkout the 'output' branch (which contains your deployed site)
           path: DevEx-Starter-Template # Checkout the contents into this subdirectory
         
-      - name: Debug: Verify Checkout Result and Content # This step will now execute with correct YAML syntax
+      - name: Verify Checkout Result and Content # This step will now execute with correct YAML syntax
         run: |
           echo "--- Debugging Checkout Result and Content ---"
           echo "Current working directory on runner: $(pwd)"
