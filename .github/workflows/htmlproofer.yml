@@ -1,31 +1,39 @@
 # .github/workflows/documentation-quality-gate.yml
-name: Documentation Quality Gate (HTMLProofer)
+name: Documentation Quality Gate (HTMLProofer) # <-- This is the name of *this* workflow
 
 on:
+  # This section specifies that this workflow should run when another workflow completes.
   workflow_run:
-    workflows: ["Build and Deploy Documentation"] # Trigger after the deploy workflow completes
+    # List the exact name(s) of the workflows that, upon completion, should trigger this one.
+    # THIS MUST EXACTLY MATCH THE 'name:' FIELD IN YOUR 'publish-site.yml'
+    workflows: ["Build and Deploy Documentation"] # <--- CONFIRM THIS EXACTLY MATCHES publish-site.yml's 'name:'
     types:
-      - completed # Only run if the deployment workflow completed successfully
+      - completed # Trigger when the specified workflow (Build and Deploy Documentation) completes
     branches:
-      - main # Only run for the 'main' branch
+      - main # Trigger only if the *triggering* workflow (Build and Deploy) ran on the 'main' branch
 
-  workflow_dispatch: # Allow manual triggering of this workflow
+  # Add workflow_dispatch to allow manual triggering from the GitHub Actions tab
+  workflow_dispatch:
 
 jobs:
   validate_deployed_docs:
-    runs-on: ubuntu-latest # Use the latest Ubuntu runner
+    runs-on: ubuntu-latest
     permissions:
-      contents: read # Only needs read access to checkout the 'output' branch
+      contents: read
 
     # This condition ensures the quality gate only runs if the 'Build and Deploy' workflow succeeded.
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    # Changed condition to also run on manual dispatch, for easier testing
 
     steps:
       - name: Checkout Deployed Site into 'DevEx-Starter-Template' Subdirectory
         uses: actions/checkout@v4
         with:
-          ref: output # Checkout the 'output' branch (which contains your deployed site)
-          path: DevEx-Starter-Template # Checkout the contents into a subdirectory named after your repo
+          # If triggered by workflow_run, get the 'output' branch of the *current* repository.
+          # If triggered manually via workflow_dispatch, we'll need to specify the branch
+          # or assume it's checking out the 'output' branch of the current repo.
+          ref: output 
+          path: DevEx-Starter-Template 
         
       - name: Debug: Verify Checkout Path and Initial HTML Content (Optional but Recommended)
         run: |
@@ -44,42 +52,27 @@ jobs:
           echo "--- End Debug ---"
 
       - name: 💣 Pre-Process HTML: Strip Jekyll Base URL Prefix 💣
-        # This step is crucial. It manually rewrites absolute paths in the HTML files.
-        # It changes paths like "/DevEx-Starter-Template/assets/..." to "/assets/..."
-        # This makes the paths root-relative to the 'DevEx-Starter-Template' directory,
-        # which HTML-Proofer can then correctly resolve against its 'directory' input.
         run: |
           echo "Starting HTML pre-processing to remove Jekyll baseurl prefix from internal links..."
-          # Find all HTML files within the checked-out directory and its subdirectories
-          # Use 'sed -i' to perform an in-place edit on the files.
-          # The regex 's/\/DevEx-Starter-Template\//\//g' replaces all occurrences of
-          # "/DevEx-Starter-Template/" with just "/"
           find ./DevEx-Starter-Template -type f -name "*.html" -print0 | xargs -0 \
             sed -i 's/\/DevEx-Starter-Template\//\//g'
           echo "HTML path rewrite complete. Verifying changes on sample file..."
           
-          # Verify the rewrite on index.html
           grep 'DevEx-Starter-Template/assets' ./DevEx-Starter-Template/index.html && \
             echo "ERROR: The '/DevEx-Starter-Template/' prefix was NOT successfully stripped by sed. Sed command failed." || \
             echo "SUCCESS: '/DevEx-Starter-Template/' prefix stripped from sample file. Proceeding to HTML-Proofer."
           echo "--- End Pre-processing ---"
 
       - name: ⚙️ Run HTMLProofer on Pre-Processed Docs
-        # Now that the HTML files have been modified to remove the baseurl prefix,
-        # HTML-Proofer can be run against the directory where the files reside.
         uses: chabad360/htmlproofer@v1
         with:
-          # The 'directory' input points to the root of your deployed site content after checkout.
-          # The HTML links (e.g., "/assets/images/md.png") will now correctly resolve
-          # against this directory (e.g., "./DevEx-Starter-Template/assets/images/md.png").
           directory: ./DevEx-Starter-Template 
           args: >-
-            --url-ignore "#.*" # Ignore internal anchor links (e.g., #section)
-            --url-ignore "/cdn-cgi/#.*" # Ignore specific external CDN links if problematic
-            --allow-hash-href # Allow links to just '#'
-            --disable-external # Do not check external links (only internal ones)
-            --file-ignore "/pdfs/assembled.pdf" # Ignore this specific PDF file from checks
-            --report-missing-names # Report missing 'name' attributes for anchor checks
-            --check-html # Enable HTML validity checks
-            --check-favicon # Check for favicon presence
-            # --- NO --root_dir or --swap_urls is needed here. The 'sed' command already fixed the paths. ---
+            --url-ignore "#.*"
+            --url-ignore "/cdn-cgi/#.*"
+            --allow-hash-href
+            --disable-external
+            --file-ignore "/pdfs/assembled.pdf"
+            --report-missing-names
+            --check-html
+            --check-favicon
