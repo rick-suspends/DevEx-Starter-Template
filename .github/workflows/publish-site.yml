@@ -1,5 +1,5 @@
 # .github/workflows/publish-site.yml
-name: Build and Deploy Documentation
+name: Build _site and generate PDF 
 
 on:
   push:
