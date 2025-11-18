@@ -22,12 +22,14 @@ jobs:
       - name: Checkout Deployed Site from Output Branch
         uses: actions/checkout@v4
         with:
-          ref: output # Checkout the deployed content from the 'output' branch
+          ref: output # Checkout the entire 'output' branch
 
       - name: Run HTMLProofer on Deployed Docs
         uses: chabad360/htmlproofer@v1
         with:
-          directory: ./ # The local directory where the 'output' branch is checked out
+          # --- THE CRITICAL CHANGE FOR HTMLPROOFER ---
+          # Point directory directly to the subdirectory where the site now lives
+          directory: ./DevEx-Starter-Template # <--- NEW: HTMLProofer now checks this subdir
           args: >-
             --url-ignore "#.*"
             --url-ignore "/cdn-cgi/#.*"
@@ -37,8 +39,5 @@ jobs:
             --report-missing-names
             --check-html
             --check-favicon
-            # --- COMBINING BOTH CORRECT FLAGS ---
-            # 1. Tells html-proofer where the physical files are located relative to its current execution.
-            --root_dir ./
-            # 2. Tells html-proofer how to rewrite baseurl-prefixed URLs in the HTML to match local files.
-            --swap_urls "/^\\/DevEx-Starter-Template\\/:\\//"
+            # --- NO --root_dir or --swap_urls needed here anymore! ---
+            # The paths in the HTML now directly match the file system structure relative to 'directory'.
