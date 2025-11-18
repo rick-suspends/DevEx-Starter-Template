@@ -5,9 +5,9 @@ destination: _site
 # Base URL for the site when it's served in a subdirectory (e.g., on GitHub Pages)
 # This should be the name of your GitHub repository, prefixed with a slash.
 # If your repo is 'DevEx-Starter-Template', set it to '/DevEx-Starter-Template'.
-#baseurl: "/DevEx-Starter-Template" # <--- IMPORTANT: Change 'DevEx-Starter-Template' to your actual repo name
+baseurl: "/DevEx-Starter-Template" # <--- IMPORTANT: Change 'DevEx-Starter-Template' to your actual repo name
 
 # The full URL of your site (optional, but good practice)
 # Replace 'username' with your GitHub username or organization name.
-#url: "https://<username>.github.io" # Example: "https://yourusername.github.io"
+url: "https://<username>.github.io" # Example: "https://yourusername.github.io"
 # Or if you're using a custom domain: url: "https://www.yourcustomdomain.com"
