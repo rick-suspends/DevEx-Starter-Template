@@ -1,7 +1,7 @@
 ---
 layout: page
 title: test 
-permalink: /test.html/
+permalink: test.html
 ---
 
 # {{ page.title }}
