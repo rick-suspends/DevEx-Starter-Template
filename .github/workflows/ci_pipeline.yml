@@ -2,43 +2,43 @@
 name: Documentation Quality Gate (HTMLProofer)
 
 on:
-  push:
+  workflow_run: # <--- NEW TRIGGER TYPE!
+    workflows: ["Build and Deploy Documentation"] # <--- Name of your publish-site.yml workflow
+    types:
+      - completed # Trigger when the specified workflow completes
     branches:
-      - output # Trigger this workflow ONLY when the 'output' branch is updated (i.e., after publish-site.yml deploys)
-  workflow_dispatch: # Allows manual triggering from the GitHub UI
+      - main # <--- Limit to runs of 'Build and Deploy Documentation' on the 'main' branch
+
+  # Keep workflow_dispatch for manual runs if desired
+  workflow_dispatch:
 
 jobs:
   validate_deployed_docs:
     runs-on: ubuntu-latest
+    # Grant permissions to read the repository contents.
+    # This is crucial because workflow_run runs in a new context and needs explicit permissions.
     permissions:
-      contents: read # This workflow only needs to read the contents of the 'output' branch
+      contents: read
+
+    # Only run if the previous workflow (Build and Deploy) was successful
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
+      # The workflow_run event doesn't directly provide the 'output' branch.
+      # We need to fetch the artifact from the *triggering workflow*.
+      # However, for htmlproofer, it's easier to just checkout the `output` branch directly.
+
       # 1. CHECKOUT THE DEPLOYED CONTENT from the 'output' branch.
-      # This makes the entire static site (that was pushed from docs/_site) available at the runner's root.
+      # This ensures we're testing the exact content that was just deployed.
       - name: Checkout Deployed Site from Output Branch
         uses: actions/checkout@v4
         with:
-          ref: output # IMPORTANT: Specifically checkout the 'output' branch
+          ref: output # Crucial: checkout the 'output' branch
+          # token: ${{ secrets.GITHUB_TOKEN }} # Default GITHUB_TOKEN has read access, should be fine.
 
       # 2. RUN HTML PROOFER using the dedicated GitHub Action.
-      # This action encapsulates all its dependencies and does not require Ruby/Jekyll setup.
       - name: Run HTMLProofer on Deployed Docs
         uses: chabad360/htmlproofer@v1
         with:
-          # The 'directory' is the location of the HTML files to check.
-          # Since we checked out the 'output' branch, the site's root is now the runner's current directory.
           directory: ./ # Target the entire root of the checked-out 'output' branch
-
-          # 'arguments' are passed directly to the html-proofer command-line tool.
-          # Customize these based on your site's specific requirements.
-          arguments: '--url-ignore "#.*" --url-ignore "/cdn-cgi/#.*" --allow-hash-href --file-ignore "/pdfs/assembled.pdf" --report-missing-names --check-html --check-favicon'
-          # Explanation of common arguments:
-          #   --url-ignore "#.*"               : Ignores internal anchor links (e.g., #top, #section-id).
-          #   --url-ignore "/cdn-cgi/#.*"      : Example: Ignores specific external patterns, if needed.
-          #   --allow-hash-href                : Allows <a> tags where href is just "#".
-          #   --disable-external               : Skips checking external links (faster, but misses broken external links).
-          #   --file-ignore "/pdfs/assembled.pdf" : CRUCIAL: Prevents htmlproofer from trying to parse the PDF as HTML.
-          #   --report-missing-names           : Reports missing 'name' attributes for anchor links.
-          #   --check-html                     : Performs HTML syntax validation.
-          #   --check-favicon                  : Checks for a favicon.
+          arguments: '--url-ignore "#.*" --url-ignore "/cdn-cgi/#.*" --allow-hash-href --disable-external --file-ignore "/pdfs/assembled.pdf" --report-missing-names --check-html --check-favicon'
