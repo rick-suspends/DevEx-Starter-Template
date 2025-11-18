@@ -73,9 +73,11 @@ This project includes Python tools to validate the Markdown, links, and assets o
 
 ### FastAPI and Swagger docs
 
-The FastAPI application provides automatic API documentation using Swagger and ReDoc. 
+Use the FastAPI web framework to create an API for the validation tools. This template includes a basic FastAPI application with endpoints for each validation tool. 
 
 The FastAPI app is located in the `/src/api.py` file. 
+
+The FastAPI application provides automatic API documentation using Swagger and ReDoc. 
 
 You can see an example of Swagger docs for the deployed instance of this project at this [Lightsail container](https://container-service-1.gqceswqwzkchr.us-west-2.cs.amazonlightsail.com/docs).
 

@@ -1,0 +1,47 @@
+# This file is sourced by ~/.bashrc or ~/.bash_profile
+# It sets up project-specific environment variables, aliases, and runs the installer script.
+
+# Define REPO_ROOT based on this script's location (env/.customrc)
+# realpath resolves symlinks and gives an absolute path
+# dirname gets the directory part
+# The 'cut' command removes the /env part from the path
+_THIS_DIR=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
+export REPO_ROOT=$(echo "$_THIS_DIR" | sed 's/\/[^/]*$//') # Removes '/env' from path
+
+
+# --- Run Environment Installation Script (Only once per session) ---
+if [ -z "$MY_PROJECT_ENV_SETUP_COMPLETE" ]; then
+    echo "Sourcing .customrc: Running initial environment setup from $REPO_ROOT/env/install-env.sh..."
+    INSTALL_SCRIPT="$REPO_ROOT/env/install-env.sh"
+    if [ -f "$INSTALL_SCRIPT" ]; then
+        bash "$INSTALL_SCRIPT" # Use 'bash' to run, not 'source', due to sudo/installations
+        export MY_PROJECT_ENV_SETUP_COMPLETE="true"
+        echo "Initial environment setup complete. To re-run, unset MY_PROJECT_ENV_SETUP_COMPLETE."
+    else
+        echo "ERROR: Environment setup script not found at $INSTALL_SCRIPT" >&2
+    fi
+fi
+
+
+# --- Project-specific Environment Variables ---
+# Add your repo's bin directory to PATH for project-specific scripts
+export PATH="$REPO_ROOT/bin:$PATH"
+
+# Example: Set a specific variable for your project
+export MY_PROJECT_CONFIG_PATH="$REPO_ROOT/config"
+
+
+# --- Project-specific Aliases ---
+alias mybuild='cd "$REPO_ROOT" && bundle exec jekyll build --source ./docs --destination ./docs/_site'
+alias mypdf='cd "$REPO_ROOT" && ./bin/assemble_docs_body.sh'
+alias mytest='cd "$REPO_ROOT" && python3 -m pytest' # Example
+
+alias db='docker build -t richardmallery/devex-starter-template:latest .'
+alias dp='docker push richardmallery/devex-starter-template'
+
+alias gitgo="git add ~/repos/DevEx-Starter-Template/. && git commit -m 'pushing current updates automatically' && git push"
+
+# Clean up temporary variable
+unset _THIS_DIR
+
+echo "Project environment variables and aliases loaded for $REPO_ROOT"

@@ -1,0 +1,4 @@
+#!/bin/bash
+
+alias db='docker build -t richardmallery/devex-startup-template:latest .'
+alias dp='docker push richardmallery/devex-startup-template:latest' 
