@@ -1,4 +1,4 @@
-# This file is sourced by ~/.bashrc or ~/.bash_profile
+# This file is sourced by ~/.bashrc or ~/.bash_profile 
 # It sets up project-specific environment variables, aliases, and runs the installer script.
 
 # Define REPO_ROOT based on this script's location (env/.customrc)
