@@ -19,15 +19,25 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
-      - name: Checkout Deployed Site from Output Branch
+      - name: Checkout Deployed Site into 'DevEx-Starter-Template' Subdirectory
         uses: actions/checkout@v4
         with:
-          ref: output # Checkout the entire 'output' branch
+          ref: output
+          path: DevEx-Starter-Template # <--- CRITICAL CHANGE: Checkout into this path
 
-      - name: Run HTMLProofer on Deployed Docs
+      - name: Debug Checkout Path (Optional, but good for verification)
+        run: |
+          echo "Current working directory: $(pwd)"
+          echo "Contents of the checked-out directory 'DevEx-Starter-Template':"
+          ls -R ./DevEx-Starter-Template || { echo "ERROR: DevEx-Starter-Template directory not found or empty!"; exit 1; }
+          echo "Sample HTML content (first few lines of index.html):"
+          head -n 20 ./DevEx-Starter-Template/index.html | grep "DevEx-Starter-Template" || echo "No DevEx-Starter-Template prefix found in index.html, check config."
+          
+      - name: Run HTMLProofer on Top-Level Deployed Docs
         uses: chabad360/htmlproofer@v1
         with:
-          directory: ./ # htmlproofer checks from the root of the 'output' branch
+          # --- Point directory to the checked-out content's root ---
+          directory: ./DevEx-Starter-Template # <--- htmlproofer's base is now the content's root
           args: >-
             --url-ignore "#.*"
             --url-ignore "/cdn-cgi/#.*"
@@ -37,5 +47,8 @@ jobs:
             --report-missing-names
             --check-html
             --check-favicon
-            # This is the key:
-            --swap_urls "/^\\/DevEx-Starter-Template\\/:\\//"
+            # --- NO --root_dir or --swap_urls should be needed here! ---
+            # If the HTML links are /DevEx-Starter-Template/assets/...
+            # and the content is checked out to ./DevEx-Starter-Template
+            # and htmlproofer's directory is ./DevEx-Starter-Template,
+            # then it should resolve those paths correctly without further transforms.
