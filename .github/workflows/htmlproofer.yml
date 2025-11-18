@@ -27,8 +27,7 @@ jobs:
       - name: Run HTMLProofer on Deployed Docs
         uses: chabad360/htmlproofer@v1
         with:
-          # directory: ./ remains as the starting point for htmlproofer
-          directory: ./ 
+          directory: ./ # The local directory where the 'output' branch is checked out
           args: >-
             --url-ignore "#.*"
             --url-ignore "/cdn-cgi/#.*"
@@ -38,7 +37,8 @@ jobs:
             --report-missing-names
             --check-html
             --check-favicon
-            # --- THE NEW CHANGE: --root_dir points to the baseurl prefix ---
-            # This attempts to tell htmlproofer that the content it's checking *should be served from* this root.
-            --root_dir /DevEx-Starter-Template/ # <--- Try this!
-            # Removing --url-swap as it might interfere if --root_dir works as intended here.
+            # --- COMBINING BOTH CORRECT FLAGS ---
+            # 1. Tells html-proofer where the physical files are located relative to its current execution.
+            --root_dir ./
+            # 2. Tells html-proofer how to rewrite baseurl-prefixed URLs in the HTML to match local files.
+            --swap_urls "/^\\/DevEx-Starter-Template\\/:\\//"
