@@ -1,18 +1,17 @@
 # .github/workflows/documentation-quality-gate.yml
-name: Documentation Quality Gate (HTMLProofer) # <-- This is the name of *this* workflow
+name: Documentation Quality Gate (HTMLProofer) # <-- Name of THIS workflow
 
 on:
-  # This section specifies that this workflow should run when another workflow completes.
+  # This section ensures this workflow runs *AFTER* your deployment workflow completes.
   workflow_run:
-    # List the exact name(s) of the workflows that, upon completion, should trigger this one.
-    # THIS MUST EXACTLY MATCH THE 'name:' FIELD IN YOUR 'publish-site.yml'
-    workflows: ["Build _site and generate PDF"] # <--- CONFIRM THIS EXACTLY MATCHES publish-site.yml's 'name:'
+    # This MUST EXACTLY MATCH the 'name:' field in your 'publish-site.yml'
+    workflows: ["Build _site and generate PDF"] # <--- TRIGGER WORKFLOW NAME UPDATED HERE
     types:
-      - completed # Trigger when the specified workflow (Build and Deploy Documentation) completes
+      - completed # Trigger when the specified workflow completes
     branches:
-      - main # Trigger only if the *triggering* workflow (Build and Deploy) ran on the 'main' branch
+      - main # Trigger only if the *triggering* workflow ran on the 'main' branch
 
-  # Add workflow_dispatch to allow manual triggering from the GitHub Actions tab
+  # Add workflow_dispatch to allow manual triggering from the GitHub Actions tab for testing
   workflow_dispatch:
 
 jobs:
@@ -21,29 +20,32 @@ jobs:
     permissions:
       contents: read
 
-    # This condition ensures the quality gate only runs if the 'Build and Deploy' workflow succeeded.
+    # This condition ensures the quality gate only runs if the 'Build _site and generate PDF' workflow succeeded
+    # OR if it's manually dispatched (for easier debugging).
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
-    # Changed condition to also run on manual dispatch, for easier testing
 
     steps:
+      - name: Wait for 'output' branch to update # Give peaceiris/actions-gh-pages time to push
+        run: |
+          echo "Waiting 30 seconds for 'output' branch to fully update after deployment..."
+          sleep 30
+        shell: bash
+
       - name: Checkout Deployed Site into 'DevEx-Starter-Template' Subdirectory
         uses: actions/checkout@v4
         with:
-          # If triggered by workflow_run, get the 'output' branch of the *current* repository.
-          # If triggered manually via workflow_dispatch, we'll need to specify the branch
-          # or assume it's checking out the 'output' branch of the current repo.
-          ref: output 
-          path: DevEx-Starter-Template 
+          ref: output # Checkout the 'output' branch (which contains your deployed site)
+          path: DevEx-Starter-Template # Checkout the contents into this subdirectory
         
       - name: Debug: Verify Checkout Path and Initial HTML Content (Optional but Recommended)
         run: |
           echo "--- Debugging Checkout and Initial Content ---"
           echo "Current working directory on runner: $(pwd)"
           echo "Contents of the checked-out directory 'DevEx-Starter-Template':"
-          ls -R ./DevEx-Starter-Template || { echo "ERROR: 'DevEx-Starter-Template' directory not found or empty after checkout!"; exit 1; }
+          ls -R ./DevEx-Starter-Template || { echo "ERROR: 'DevEx-Starter-Template' directory not found or empty after checkout! (Did the delay help?)"; exit 1; }
           
           echo "First 25 lines of ./DevEx-Starter-Template/index.html:"
-          head -n 25 ./DevEx-Starter-Template/index.html || { echo "ERROR: index.html not found in checked-out content!"; exit 1; }
+          head -n 25 ./DevEx-Starter-Template/index.html || { echo "ERROR: index.html not found in checked-out content! This indicates an issue with deployment."; exit 1; }
           
           echo "Searching for '/DevEx-Starter-Template/' prefix in index.html (expecting to find it before sed):"
           grep 'DevEx-Starter-Template/assets' ./DevEx-Starter-Template/index.html && \
