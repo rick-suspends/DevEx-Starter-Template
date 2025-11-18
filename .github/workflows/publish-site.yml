@@ -4,46 +4,52 @@ name: Build and Deploy Documentation
 on:
   push:
     branches:
-      - main # Trigger when new source code is pushed to main
+      - main
   workflow_dispatch:
 
 jobs:
   build_deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Needed for the deployment action
+      contents: write
 
     steps:
       - name: 1. Checkout repository
         uses: actions/checkout@v4
 
-      # --- SETUP STEPS (Assuming you have these or similar) ---
+      # --- SETUP STEPS ---
       # For Ruby dependencies (like Jekyll)
       - name: 2. Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.x'
-          bundler-cache: true # Installs gems from Gemfile.lock
+          ruby-version: '3.3' # Changed from '3.x' to a specific major.minor version
+          bundler-cache: true
 
       - name: 3. Install System Dependencies (for wkhtmltopdf, etc.)
-        # Note: In a real GA workflow, you'd use a Docker container 
-        # or a setup step to install wkhtmltopdf dependencies from your env/install_env.sh
         run: |
           sudo apt update
-          sudo apt install -y build-essential wkhtmltopdf # Example: directly install wkhtmltopdf here
+          # Add actual wkhtmltopdf dependencies, not just a placeholder
+          sudo apt install -y fontconfig libfreetype6 libx11-6 libxext6 libxrender1 xfonts-base xfonts-75dpi xvfb
+          # Ensure wkhtmltopdf is installed. The 'bionic' package is often best for libssl1.1 compatibility.
+          WKHTMLTOPDF_DEB_URL="https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.bionic_amd64.deb"
+          wget ${WKHTMLTOPDF_DEB_URL} -O wkhtmltox.deb
+          # Manually install libssl1.1 if needed for bionic build on newer Ubuntu
+          wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2_amd64.deb -O libssl1.1.deb
+          sudo dpkg -i libssl1.1.deb || true
+          sudo dpkg -i wkhtmltox.deb || sudo apt install -f -y
+          rm -f wkhtmltox.deb libssl1.1.deb
+          wkhtmltopdf --version # Verify installation
+
 
       # --- BUILD AND ARTIFACT GENERATION ---
       - name: 4. Build Jekyll Site
         run: bundle exec jekyll build
 
       - name: 5. Generate Documentation PDF
-        # Assuming assemble_docs_body.sh uses wkhtmltopdf and outputs to a known location, 
-        # e.g., docs/pdfs/assembled.pdf
         run: |
           ./bin/assemble_docs_body.sh
 
       - name: 6. Move PDF into _site for Deployment
-        # Move the generated PDF into the _site directory so it gets deployed with the rest of the site.
         run: |
           mkdir -p _site/pdfs
           cp docs/pdfs/assembled.pdf _site/pdfs/
@@ -54,7 +60,7 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./_site             # Tell the action to push the contents of the _site directory
-          publish_branch: output           # The dedicated branch for generated artifacts
+          publish_dir: ./_site
+          publish_branch: output
           commit_message: "chore(docs): Auto-deploy documentation to GitHub Pages [skip ci]"
-          force_orphan: true # Recommended to ensure the 'output' branch only contains the contents of _site
+          force_orphan: true
