@@ -23,9 +23,6 @@ jobs:
         with:
           ruby-version: '3.3'
           bundler-cache: true # This still provides caching benefits
-        # Add an explicit bundle install here if bundler-cache isn't sufficient for executables
-        # run: bundle install # <--- Can try adding this here if the next step still fails.
-                             #      But usually bundler-cache: true implies it runs.
 
       - name: 3. Install System Dependencies (for wkhtmltopdf, etc.)
         run: |
@@ -42,23 +39,26 @@ jobs:
 
       # --- BUILD AND ARTIFACT GENERATION ---
       - name: 4. Build Jekyll Site
-        # Ensure working directory is correct if Gemfile/Gemfile.lock are not at repo root
-        working-directory: ${{ github.workspace }} # explicitly set to repo root
+        # Ensure that this step is run from the repository root
+        working-directory: ${{ github.workspace }}
         run: |
-          # Explicitly run bundle install *again* before build, if bundler-cache alone isn't making `jekyll` available.
-          # This should ensure the executable is correctly registered for the current run.
-          bundle install # This command is key!
-          bundle exec jekyll build
+          echo "Current directory for bundle commands: $(pwd)" # Debugging line
+          bundle install # This should now find the Gemfile at the root
+          bundle exec jekyll build --source ./docs --destination ./_site
+          # Note: Changed --destination to ./_site directly as per our deployment to 'output' branch
           
       # ... (rest of your workflow) ...
       - name: 5. Generate Documentation PDF
         run: |
+          # This needs to run from repo root to find ./bin/assemble_docs_body.sh
+          # and also needs the _site directory to be present for the HTML extraction.
+          # Assuming assemble_docs_body.sh correctly outputs to docs/pdfs/assembled.pdf initially
           ./bin/assemble_docs_body.sh
 
       - name: 6. Move PDF into _site for Deployment
         run: |
-          mkdir -p _site/pdfs
-          cp docs/pdfs/assembled.pdf _site/pdfs/
+          mkdir -p _site/pdfs # Ensure _site/pdfs exists
+          cp docs/pdfs/assembled.pdf _site/pdfs/assembled.pdf
           echo "PDF copied to _site/pdfs/assembled.pdf"
 
       # --- DEPLOYMENT STEP ---
