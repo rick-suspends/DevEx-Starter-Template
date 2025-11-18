@@ -27,9 +27,7 @@ jobs:
       - name: Run HTMLProofer on Deployed Docs
         uses: chabad360/htmlproofer@v1
         with:
-          # --- THE CRITICAL CHANGE FOR HTMLPROOFER ---
-          # Point directory directly to the subdirectory where the site now lives
-          directory: ./DevEx-Starter-Template # <--- NEW: HTMLProofer now checks this subdir
+          directory: ./ # htmlproofer checks from the root of the 'output' branch
           args: >-
             --url-ignore "#.*"
             --url-ignore "/cdn-cgi/#.*"
@@ -39,5 +37,7 @@ jobs:
             --report-missing-names
             --check-html
             --check-favicon
-            # --- NO --root_dir or --swap_urls needed here anymore! ---
-            # The paths in the HTML now directly match the file system structure relative to 'directory'.
+            # --- THE ESSENTIAL SWAP_URLS FOR PROJECT PAGES ---
+            # This maps the Jekyll baseurl prefix in the HTML to the local file system root.
+            --swap_urls "/^\\/DevEx-Starter-Template\\/:\\//"
+            # No --root_dir needed here, as directory is '.' and that's the local root.

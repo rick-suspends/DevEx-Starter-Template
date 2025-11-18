@@ -11,7 +11,7 @@ jobs:
   build_deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # Needed for peaceiris/actions-gh-pages to push to 'output' branch
 
     steps:
       - name: 1. Checkout repository
@@ -20,72 +20,106 @@ jobs:
       - name: 2. Set up Ruby Environment
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.1'
+          ruby-version: '3.1' # Specify your desired Ruby version. Check your local Ruby version if unsure.
+          # We are NOT using bundler-cache: true because you're installing gems globally
           
       - name: 2.1 Install Jekyll and other global gems
         run: |
+          echo "Installing Jekyll and required gems globally..."
           gem install jekyll
-          gem install kramdown-parser-gfm # Add any other Jekyll-related gems here
+          # Add any other specific gems your Jekyll site might need globally.
+          # For example, if you use GitHub Flavored Markdown:
+          # gem install kramdown-parser-gfm
+          echo "Global gems installed."
         
       - name: 2.2 Install wkhtmltopdf (for PDF generation)
-        run: sudo apt-get update && sudo apt-get install -y wkhtmltopdf
+        run: |
+          echo "Updating apt-get and installing wkhtmltopdf..."
+          sudo apt-get update
+          sudo apt-get install -y wkhtmltopdf
+          echo "wkhtmltopdf installed."
 
       - name: 3. Verify Jekyll Installation (DEBUG)
         run: |
-          echo "Verifying Jekyll availability..."
-          which jekyll || echo "Jekyll not found in PATH."
-          jekyll -v || echo "Jekyll version command failed."
-          echo "PATH: $PATH"
+          echo "--- Verifying Jekyll availability ---"
+          which jekyll || { echo "ERROR: Jekyll executable not found in PATH!"; exit 1; }
+          jekyll -v || { echo "ERROR: Jekyll version command failed!"; exit 1; }
+          echo "Jekyll is installed and accessible: $(jekyll -v)"
+          echo "Current PATH: $PATH"
+          echo "--- End Jekyll Verification ---"
 
       - name: 4. Build Jekyll Site for Deployment
-        working-directory: ${{ github.workspace }}
+        working-directory: ${{ github.workspace }} # Ensure we are at the repository root
         run: |
-          echo "Current directory for Jekyll build: $(pwd)"
+          echo "Starting Jekyll build..."
+          echo "Current working directory: $(pwd)"
+          # Build Jekyll site from ./docs to ./docs/_site_deploy
+          # Ensure baseurl in docs/_config.yml is set to "/DevEx-Starter-Template" for project pages
           jekyll build --source ./docs --destination ./docs/_site_deploy
-          echo "Jekyll site built successfully to docs/_site_deploy."
+          echo "Jekyll site built successfully to ./docs/_site_deploy."
         
-      - name: 4.5 Debug docs/_site_deploy contents
-        run: |
-          echo "--- Verifying contents of docs/_site_deploy ---"
-          ls -R ./docs/_site_deploy || { echo "ERROR: ./docs/_site_deploy directory does NOT exist!"; exit 1; }
-          du -sh ./docs/_site_deploy || { echo "ERROR: Could not get size of ./docs/_site_deploy!"; exit 1; }
-          cat ./docs/_site_deploy/index.html | grep 'DevEx-Starter-Template/assets/css/main.css' && echo "Baseurl prefix found in deploy site as expected." || echo "Baseurl prefix NOT found in deploy site (check _config.yml)."
-          echo "--- End Debug ---"
+      - name: 4.5 Debug docs/_site_deploy contents (After Jekyll Build)
         working-directory: ${{ github.workspace }}
+        run: |
+          echo "--- Debugging contents of ./docs/_site_deploy ---"
+          if [ ! -d "./docs/_site_deploy" ]; then
+            echo "ERROR: ./docs/_site_deploy directory does NOT exist after Jekyll build!"
+            exit 1
+          fi
+          echo "Directory ./docs/_site_deploy exists. Listing contents:"
+          ls -R ./docs/_site_deploy || { echo "ERROR: Could not list contents of ./docs/_site_deploy!"; exit 1; }
+          
+          echo "Checking for 'DevEx-Starter-Template' prefix in generated HTML (e.g., in index.html):"
+          # This grep will confirm if Jekyll added the baseurl prefix as expected
+          grep -m 1 'DevEx-Starter-Template/assets' ./docs/_site_deploy/index.html && \
+            echo "SUCCESS: 'DevEx-Starter-Template' prefix found in index.html. Jekyll baseurl is working." || \
+            echo "WARNING: 'DevEx-Starter-Template' prefix NOT found in index.html. Check docs/_config.yml baseurl."
+          echo "--- End Debug ---"
 
       - name: 5. Generate Documentation PDF
-        working-directory: ${{ github.workspace }}
+        working-directory: ${{ github.workspace }} # Ensure we are at the repository root
         run: |
           echo "Preparing Jekyll _site for PDF generation script..."
-          # --- THE CRITICAL FIX: Copy _site_deploy to _site ---
-          mkdir -p ./docs/_site # Ensure the target directory exists
-          cp -R ./docs/_site_deploy/* ./docs/_site/ # Copy contents, not the directory itself
-          echo "Jekyll _site_deploy copied to docs/_site."
-          
-          ./bin/assemble_docs_body.sh # Now this script should find ./docs/_site
+          # The assemble_docs_body.sh script expects Jekyll's output at ./docs/_site.
+          # We need to copy our ./docs/_site_deploy output to ./docs/_site temporarily.
+          mkdir -p ./docs/_site # Ensure the target directory exists for the copy
+          cp -R ./docs/_site_deploy/* ./docs/_site/ # Copy CONTENTS into ./docs/_site
+          echo "Contents of ./docs/_site_deploy copied to ./docs/_site."
+
+          echo "Running assemble_docs_body.sh script..."
+          ./bin/assemble_docs_body.sh # Execute your script here
           
           if [ -f "docs/pdfs/assembled.pdf" ]; then
-            echo "PDF file (docs/pdfs/assembled.pdf) successfully created."
+            echo "SUCCESS: PDF file (docs/pdfs/assembled.pdf) successfully created by assemble_docs_body.sh."
             exit 0
           else
-            echo "ERROR: PDF file (docs/pdfs/assembled.pdf) was NOT created."
+            echo "ERROR: PDF file (docs/pdfs/assembled.pdf) was NOT created, and assemble_docs_body.sh failed. Propagating failure."
             exit 1
           fi
 
-      - name: 6. Move PDF into _site_deploy
+      - name: 6. Move PDF into _site_deploy (for deployment)
         working-directory: ${{ github.workspace }}
         run: |
-          echo "Moving generated PDF into the Jekyll _site_deploy directory..."
+          echo "Moving generated PDF into the final Jekyll build directory (./docs/_site_deploy)..."
           mkdir -p docs/_site_deploy/pdfs || { echo "ERROR: Failed to create docs/_site_deploy/pdfs directory!"; exit 1; }
           cp docs/pdfs/assembled.pdf docs/_site_deploy/pdfs/assembled.pdf || { echo "ERROR: Failed to copy assembled.pdf!"; exit 1; }
           echo "PDF copied to docs/_site_deploy/pdfs/assembled.pdf."
 
-      - name: 7. Deploy _site to 'output' branch in DevEx-Starter-Template subdirectory
+      - name: 6.5 Debug _site_deploy contents (Final check before deploy)
+        working-directory: ${{ github.workspace }}
+        run: |
+          echo "--- Final check of ./docs/_site_deploy contents before deployment ---"
+          ls -R ./docs/_site_deploy || { echo "ERROR: ./docs/_site_deploy directory does NOT exist!"; exit 1; }
+          du -sh ./docs/_site_deploy || { echo "ERROR: Could not get size of ./docs/_site_deploy!"; exit 1; }
+          ls -l ./docs/_site_deploy/pdfs/assembled.pdf && echo "SUCCESS: assembled.pdf found in deployment directory." || echo "WARNING: assembled.pdf NOT found in deployment directory!"
+          echo "--- End Final Debug ---"
+          
+      - name: 7. Deploy _site to 'output' branch root
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/_site_deploy
-          publish_branch: output
-          destination_dir: DevEx-Starter-Template
+          publish_dir: ./docs/_site_deploy # This is the source directory whose contents will be published
+          publish_branch: output           # This is the target branch on GitHub
+          # destination_dir is REMOVED, so contents of publish_dir go to the ROOT of the output branch
           commit_message: "chore(docs): Auto-deploy documentation to GitHub Pages [skip ci]"
-          force_orphan: true
+          force_orphan: true # Overwrites the output branch completely with new content
