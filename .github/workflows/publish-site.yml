@@ -44,3 +44,110 @@ jobs:
           echo "Core dependencies installed."
 
           # --- Robust wkhtmltopdf installation for Ubuntu 22.04+ (handling libssl1.1) ---
+          WKHTMLTOPDF_URL="https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.bionic_amd64.deb"
+          echo "Downloading wkhtmltopdf from: ${WKHTMLTOPDF_URL}"
+          wget "${WKHTMLTOPDF_URL}" -O wkhtmltox.deb || { echo "ERROR: Failed to download wkhtmltopdf!"; exit 1; }
+
+          # Manually install libssl1.1 from an older Ubuntu release (Focal 20.04) if needed for bionic build on newer Ubuntu
+          echo "Installing libssl1.1 dependency..."
+          wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2_amd64.deb -O libssl1.1.deb || { echo "ERROR: Failed to download libssl1.1!"; exit 1; }
+          sudo dpkg -i libssl1.1.deb || echo "libssl1.1 installation reported warning/error, but proceeding (might be already installed or a minor issue)." # Allow failure but proceed
+
+          # Install wkhtmltopdf using apt. This will now find the required libssl1.1 or use the one we just installed.
+          echo "Installing wkhtmltopdf package..."
+          sudo apt install -y -f ./wkhtmltox.deb || { echo "ERROR: wkhtmltox.deb installation failed! Attempting apt --fix-broken install."; sudo apt --fix-broken install -y || { echo "ERROR: apt --fix-broken install also failed!"; exit 1; }; }
+          
+          # Ensure wkhtmltopdf is in a standard PATH location (important fix if it installs to /usr/local/bin)
+          if [ ! -f "/usr/bin/wkhtmltopdf" ]; then
+              echo "wkhtmltopdf not found in /usr/bin, checking /usr/local/bin..."
+              if [ -f "/usr/local/bin/wkhtmltopdf" ]; then
+                  echo "Found wkhtmltopdf in /usr/local/bin, creating symlink to /usr/bin."
+                  sudo ln -s /usr/local/bin/wkhtmltopdf /usr/bin/wkhtmltopdf
+              else
+                  echo "Error: wkhtmltopdf not found in /usr/bin or /usr/local/bin after installation. Failing this step."
+                  exit 1 # Explicitly fail the job if wkhtmltopdf is truly missing
+              fi
+          fi
+
+          # Final verification (Crucial for diagnosis)
+          echo "PATH is: $PATH"
+          echo "Checking if wkhtmltopdf is executable and in PATH:"
+          which wkhtmltopdf || { echo "ERROR: wkhtmltopdf not found in PATH after install and linking attempts!"; exit 1; }
+          wkhtmltopdf --version || { echo "ERROR: wkhtmltopdf failed to run after install!"; exit 1; }
+          
+          # Clean up downloaded .deb files
+          rm -f wkhtmltox.deb libssl1.1.deb
+          echo "System dependencies and wkhtmltopdf installation complete."
+
+      # --- BUILD AND ARTIFACT GENERATION ---
+
+      - name: 4. Build Jekyll Site
+        working-directory: ${{ github.workspace }} # Run from the repository root
+        run: |
+          echo "Current directory for jekyll build: $(pwd)"
+          # This command builds the site from ./docs and places output into ./docs/_site
+          jekyll build --source ./docs --destination ./docs/_site
+          echo "Jekyll site built successfully to docs/_site."
+
+      # --- NEW DEBUG STEP TO VERIFY JEKYLL BUILD ---
+      - name: 4.5 Debug docs/_site after Jekyll build
+        run: |
+          echo "--- Verifying contents of docs/_site after Jekyll build ---"
+          if [ ! -d "./docs/_site" ]; then
+            echo "ERROR: ./docs/_site directory does NOT exist after Jekyll build!"
+            exit 1
+          fi
+          echo "Directory ./docs/_site exists. Listing contents:"
+          ls -R ./docs/_site || { echo "ERROR: Could not list contents of ./docs/_site!"; exit 1; }
+          echo "Size of docs/_site:"
+          du -sh ./docs/_site || { echo "ERROR: Could not get size of ./docs/_site!"; exit 1; }
+          echo "--- End Debug ---"
+        working-directory: ${{ github.workspace }} # Ensure this also runs from repo root
+
+      - name: 5. Generate Documentation PDF
+        working-directory: ${{ github.workspace }} # Run from the repository root
+        run: |
+          echo "Running assemble_docs_body.sh script..."
+          ./bin/assemble_docs_body.sh # Execute your script here
+
+          # This check relies on the assemble_docs_body.sh script having finished execution.
+          # We assume assemble_docs_body.sh now has its own internal '|| true' and exit logic.
+          # This outer check acts as an extra safety net.
+          if [ -f "docs/pdfs/assembled.pdf" ]; then
+            echo "PDF file (docs/pdfs/assembled.pdf) successfully created by assemble_docs_body.sh."
+            exit 0 # Explicitly succeed this step if PDF exists
+          else
+            echo "ERROR: PDF file (docs/pdfs/assembled.pdf) was NOT created, and assemble_docs_body.sh failed. Propagating failure."
+            exit 1 # Fail the step if PDF is genuinely missing
+          fi
+
+      - name: 6. Move PDF into _site for Deployment
+        working-directory: ${{ github.workspace }} # Run from the repository root
+        run: |
+          echo "Moving generated PDF into the Jekyll _site directory..."
+          # The Jekyll _site is in docs/_site, so create pdfs dir there
+          mkdir -p docs/_site/pdfs || { echo "ERROR: Failed to create docs/_site/pdfs directory!"; exit 1; }
+          # Copy the generated PDF into the _site directory that's inside docs/
+          cp docs/pdfs/assembled.pdf docs/_site/pdfs/assembled.pdf || { echo "ERROR: Failed to copy assembled.pdf!"; exit 1; }
+          echo "PDF copied to docs/_site/pdfs/assembled.pdf."
+
+      # --- DEBUGGING STEP (KEEP THIS FOR NOW if you need a final check before deployment) ---
+      - name: 6.9 Debug _site contents before deploy (Final check)
+        run: |
+          echo "--- Final check of docs/_site contents before deployment ---"
+          ls -R ./docs/_site || { echo "ERROR: ./docs/_site directory does not exist!"; exit 1; }
+          du -sh ./docs/_site || { echo "ERROR: Could not get size of ./docs/_site!"; exit 1; }
+          ls -l ./docs/_site/pdfs/assembled.pdf || { echo "WARNING: assembled.pdf not found in docs/_site/pdfs! (May be an issue if linked)"; }
+          echo "--- End Final Debug ---"
+        working-directory: ${{ github.workspace }}
+          
+      # --- DEPLOYMENT STEP ---
+
+      - name: 7. Deploy _site to 'output' branch
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs/_site # IMPORTANT: Publish the _site from *inside* docs
+          publish_branch: output # The dedicated branch for generated artifacts
+          commit_message: "chore(docs): Auto-deploy documentation to GitHub Pages [skip ci]"
+          force_orphan: true # Recommended to ensure 'output' branch only contains the contents of publish_dir
