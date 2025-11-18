@@ -38,3 +38,4 @@ jobs:
             --check-html
             --check-favicon
             --url-swap "/DevEx-Starter-Template/:/" # <--- This is the key addition
+            --root "/DevEx-Starter-Template/" # <--- This is the key addition
