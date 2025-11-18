@@ -1,0 +1,60 @@
+# .github/workflows/publish-site.yml
+name: Build and Deploy Documentation
+
+on:
+  push:
+    branches:
+      - main # Trigger when new source code is pushed to main
+  workflow_dispatch:
+
+jobs:
+  build_deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed for the deployment action
+
+    steps:
+      - name: 1. Checkout repository
+        uses: actions/checkout@v4
+
+      # --- SETUP STEPS (Assuming you have these or similar) ---
+      # For Ruby dependencies (like Jekyll)
+      - name: 2. Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.x'
+          bundler-cache: true # Installs gems from Gemfile.lock
+
+      - name: 3. Install System Dependencies (for wkhtmltopdf, etc.)
+        # Note: In a real GA workflow, you'd use a Docker container 
+        # or a setup step to install wkhtmltopdf dependencies from your env/install_env.sh
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential wkhtmltopdf # Example: directly install wkhtmltopdf here
+
+      # --- BUILD AND ARTIFACT GENERATION ---
+      - name: 4. Build Jekyll Site
+        run: bundle exec jekyll build
+
+      - name: 5. Generate Documentation PDF
+        # Assuming assemble_docs_body.sh uses wkhtmltopdf and outputs to a known location, 
+        # e.g., docs/pdfs/assembled.pdf
+        run: |
+          ./bin/assemble_docs_body.sh
+
+      - name: 6. Move PDF into _site for Deployment
+        # Move the generated PDF into the _site directory so it gets deployed with the rest of the site.
+        run: |
+          mkdir -p _site/pdfs
+          cp docs/pdfs/assembled.pdf _site/pdfs/
+          echo "PDF copied to _site/pdfs/assembled.pdf"
+
+      # --- DEPLOYMENT STEP ---
+      - name: 7. Deploy _site to 'output' branch
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site             # Tell the action to push the contents of the _site directory
+          publish_branch: output           # The dedicated branch for generated artifacts
+          commit_message: "chore(docs): Auto-deploy documentation to GitHub Pages [skip ci]"
+          force_orphan: true # Recommended to ensure the 'output' branch only contains the contents of _site
