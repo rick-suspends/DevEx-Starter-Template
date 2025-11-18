@@ -1,28 +1,36 @@
+# .github/workflows/documentation-quality-gate.yml
 name: Documentation Quality Gate (HTMLProofer)
 
 on:
   push:
     branches:
-      - main
-  pull_request:
-    branches:
-      - main
+      - output # Trigger when new content is pushed to the 'output' branch (after successful deployment)
+  workflow_dispatch: # Allows manual triggering from the GitHub UI
 
 jobs:
   validate_built_docs:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read # Only needs to read the deployed content
+
     steps:
-      # 1. CHECKOUT CODE (Required to access the committed files, including the HTML output)
-      - name: Checkout Repository
+      # 1. CHECKOUT THE DEPLOYED CONTENT (from the 'output' branch)
+      - name: Checkout Deployed Site
         uses: actions/checkout@v4
-        
+        with:
+          ref: output # <--- Checkout the 'output' branch specifically
+
       # 2. HTML PROOFING (Using chabad360/htmlproofer Action)
-      - name: Run HTMLProofer on Pre-Built Docs
-        uses: chabad360/htmlproofer@v1 
+      - name: Run HTMLProofer on Deployed Docs
+        uses: chabad360/htmlproofer@v1
         with:
           # REQUIRED: The directory containing the pre-built HTML files
-          # This must match your local Jekyll build destination path.
-          directory: ./docs/_site
-          
+          # Since we checked out the 'output' branch, the site content is now at the root of the runner.
+          # The original build output was `docs/_site`, which then became the root of the `output` branch.
+          # So, the directory to check is just './'
+          directory: ./ # <--- This assumes 'output' branch root *is* the site content
+
           # OPTIONS: Set arguments for QA (disabling external checks is faster)
-          #arguments: '--url-ignore "/#/" --allow-hash-href --disable-external'
+          # Make sure to ignore the PDF file here too, as htmlproofer can't parse it.
+          # And adjust URL ignores as per your site's needs.
+          arguments: '--url-ignore "#.*" --url-ignore "/cdn-cgi/#.*" --allow-hash-href --disable-external --file-ignore "/pdfs/assembled.pdf"'
