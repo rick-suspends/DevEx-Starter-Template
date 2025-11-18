@@ -143,10 +143,10 @@ jobs:
           echo "--- End Final Debug ---"
           
       - name: 9. Upload Pages artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           path: './docs/_site_deploy' # Path to your Jekyll build output
 
       - name: 10. Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v2
