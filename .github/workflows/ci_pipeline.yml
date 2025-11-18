@@ -4,33 +4,41 @@ name: Documentation Quality Gate (HTMLProofer)
 on:
   push:
     branches:
-      - output # Trigger when new content is pushed to the 'output' branch (after successful deployment)
+      - output # Trigger this workflow ONLY when the 'output' branch is updated (i.e., after publish-site.yml deploys)
   workflow_dispatch: # Allows manual triggering from the GitHub UI
 
 jobs:
-  validate_built_docs:
+  validate_deployed_docs:
     runs-on: ubuntu-latest
     permissions:
-      contents: read # Only needs to read the deployed content
+      contents: read # This workflow only needs to read the contents of the 'output' branch
 
     steps:
-      # 1. CHECKOUT THE DEPLOYED CONTENT (from the 'output' branch)
-      - name: Checkout Deployed Site
+      # 1. CHECKOUT THE DEPLOYED CONTENT from the 'output' branch.
+      # This makes the entire static site (that was pushed from docs/_site) available at the runner's root.
+      - name: Checkout Deployed Site from Output Branch
         uses: actions/checkout@v4
         with:
-          ref: output # <--- Checkout the 'output' branch specifically
+          ref: output # IMPORTANT: Specifically checkout the 'output' branch
 
-      # 2. HTML PROOFING (Using chabad360/htmlproofer Action)
+      # 2. RUN HTML PROOFER using the dedicated GitHub Action.
+      # This action encapsulates all its dependencies and does not require Ruby/Jekyll setup.
       - name: Run HTMLProofer on Deployed Docs
         uses: chabad360/htmlproofer@v1
         with:
-          # REQUIRED: The directory containing the pre-built HTML files
-          # Since we checked out the 'output' branch, the site content is now at the root of the runner.
-          # The original build output was `docs/_site`, which then became the root of the `output` branch.
-          # So, the directory to check is just './'
-          directory: ./ # <--- This assumes 'output' branch root *is* the site content
+          # The 'directory' is the location of the HTML files to check.
+          # Since we checked out the 'output' branch, the site's root is now the runner's current directory.
+          directory: ./ # Target the entire root of the checked-out 'output' branch
 
-          # OPTIONS: Set arguments for QA (disabling external checks is faster)
-          # Make sure to ignore the PDF file here too, as htmlproofer can't parse it.
-          # And adjust URL ignores as per your site's needs.
-          arguments: '--url-ignore "#.*" --url-ignore "/cdn-cgi/#.*" --allow-hash-href --disable-external --file-ignore "/pdfs/assembled.pdf"'
+          # 'arguments' are passed directly to the html-proofer command-line tool.
+          # Customize these based on your site's specific requirements.
+          arguments: '--url-ignore "#.*" --url-ignore "/cdn-cgi/#.*" --allow-hash-href --file-ignore "/pdfs/assembled.pdf" --report-missing-names --check-html --check-favicon'
+          # Explanation of common arguments:
+          #   --url-ignore "#.*"               : Ignores internal anchor links (e.g., #top, #section-id).
+          #   --url-ignore "/cdn-cgi/#.*"      : Example: Ignores specific external patterns, if needed.
+          #   --allow-hash-href                : Allows <a> tags where href is just "#".
+          #   --disable-external               : Skips checking external links (faster, but misses broken external links).
+          #   --file-ignore "/pdfs/assembled.pdf" : CRUCIAL: Prevents htmlproofer from trying to parse the PDF as HTML.
+          #   --report-missing-names           : Reports missing 'name' attributes for anchor links.
+          #   --check-html                     : Performs HTML syntax validation.
+          #   --check-favicon                  : Checks for a favicon.
