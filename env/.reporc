@@ -39,7 +39,7 @@ alias mytest='cd "$REPO_ROOT" && python3 -m pytest' # Example
 alias db='docker build -t richardmallery/devex-starter-template:latest .'
 alias dp='docker push richardmallery/devex-starter-template'
 
-alias gitgo="git add ~/repos/DevEx-Starter-Template/. && git commit -m 'pushing current updates automatically' && git push"
+alias gitgo="cd ~/repos/DevEx-Starter-Template && git add . && git commit -m 'pushing current updates automatically' && git push"
 
 # Clean up temporary variable
 unset _THIS_DIR
