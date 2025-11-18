@@ -94,11 +94,11 @@ jobs:
             --url-ignore "#.*"
             --url-ignore "/cdn-cgi/#.*"
             --allow-hash-href
+            --disable-external
             --file-ignore "/pdfs/assembled.pdf" 
             --report-missing-names
             --check-html
             --check-favicon
-            --disable-external
       # --- END HTMLPROOFER INTEGRATION ---
 
       - name: 7. Generate Documentation PDF
