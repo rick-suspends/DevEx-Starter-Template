@@ -1,47 +1,40 @@
 # .github/workflows/htmlproofer.yml
 # This is the full content for your HTMLProofer workflow file.
 
-name: Documentation Quality Gate (HTMLProofer) # <-- Name of THIS workflow
+name: Documentation Quality Gate (HTMLProofer)
 
 on:
-  # This section ensures this workflow runs *AFTER* your deployment workflow completes.
-  # This is crucial for htmlproofer to check the DEPLOYED content.
   workflow_run:
-    # This MUST EXACTLY MATCH the 'name:' field in your 'publish-site.yml'.
-    # You confirmed this is "Build _site and generate PDF".
     workflows: ["Build _site and generate PDF"] 
     types:
-      - completed # Trigger when the specified workflow completes
+      - completed
     branches:
-      - main # Trigger only if the *triggering* workflow (Build _site and generate PDF) ran on the 'main' branch
+      - main
 
-  # Add workflow_dispatch to allow manual triggering from the GitHub Actions tab for testing.
   workflow_dispatch:
 
 jobs:
   validate_deployed_docs:
-    runs-on: ubuntu-latest # Use the latest Ubuntu runner
+    runs-on: ubuntu-latest
     permissions:
-      contents: read # Only needs read access to checkout the 'output' branch
+      contents: read
 
-    # This condition ensures the quality gate only runs if the 'Build _site and generate PDF' workflow succeeded
-    # OR if it's manually dispatched (for easier debugging).
     if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
 
     steps:
-      - name: Wait for 'output' branch to update # Give peaceiris/actions-gh-pages time to push changes
+      - name: Wait for output branch to update 
         run: |
           echo "Waiting 30 seconds for 'output' branch to fully update after deployment..."
           sleep 30
         shell: bash
 
-      - name: Checkout Deployed Site into 'DevEx-Starter-Template' Subdirectory
+      - name: Checkout Deployed Site into DevEx-Starter-Template Subdirectory
         uses: actions/checkout@v4
         with:
-          ref: output # Checkout the 'output' branch (which contains your deployed site)
-          path: DevEx-Starter-Template # Checkout the contents into this subdirectory
+          ref: output
+          path: DevEx-Starter-Template 
         
-      - name: Verify Checkout Result and Content # This step will now execute with correct YAML syntax
+      - name: Debug Verify Checkout Result and Content 
         run: |
           echo "--- Debugging Checkout Result and Content ---"
           echo "Current working directory on runner: $(pwd)"
@@ -68,21 +61,20 @@ jobs:
             ls -al .
             exit 1
           fi
-          echo "--- End Debug ---"
 
-      - name: Pre-Process HTML Strip Jekyll Base URL Prefix
+      - name: Pre-Process HTML Strip Jekyll Base URL Prefix # Corrected: No colon
         run: |
           echo "Starting HTML pre-processing to remove Jekyll baseurl prefix from internal links..."
           find ./DevEx-Starter-Template -type f -name "*.html" -print0 | xargs -0 \
-            sed -i 's/\/DevEx-Starter-Template\//\//g'
+            sed -i -E 's/(href|src)="\/(DevEx-Starter-Template)\//\1="\//g'
           echo "HTML path rewrite complete. Verifying changes on sample file..."
           
           grep 'DevEx-Starter-Template/assets' ./DevEx-Starter-Template/index.html && \
-            echo "ERROR: The '/DevEx-Starter-Template/' prefix was NOT successfully stripped by sed. Sed command failed." || \
-            echo "SUCCESS: '/DevEx-Starter-Template/' prefix stripped from sample file. Proceeding to HTML-Proofer."
+            echo "ERROR: The '/DevEx-Starter-Template/' prefix was NOT successfully stripped by sed (in internal links). Sed command failed." || \
+            echo "SUCCESS: '/DevEx-Starter-Template/' prefix stripped from internal links in sample file."
           echo "--- End Pre-processing ---"
 
-      - name: ⚙️ Run HTMLProofer on Pre-Processed Docs
+      - name: Run HTMLProofer on Pre-Processed Docs
         uses: chabad360/htmlproofer@v1
         with:
           directory: ./DevEx-Starter-Template 
@@ -90,8 +82,8 @@ jobs:
             --url-ignore "#.*"
             --url-ignore "/cdn-cgi/#.*"
             --allow-hash-href
-            --disable-external
-            --file-ignore "/pdfs/assembled.pdf"
+            # Removed --disable-external to check external links
+            --file-ignore "/pdfs/assembled.pdf" 
             --report-missing-names
             --check-html
             --check-favicon
