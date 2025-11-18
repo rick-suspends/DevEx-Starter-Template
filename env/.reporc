@@ -10,21 +10,19 @@ export REPO_ROOT=$(echo "$_THIS_DIR" | sed 's/\/[^/]*$//') # Removes '/env' from
 
 
 # --- Run Environment Installation Script (Only once per session) ---
-if [ 0 ];  then
 
-	if [ -z "$MY_PROJECT_ENV_SETUP_COMPLETE" ]; then
-	    echo "Sourcing .reporc: Running initial environment setup from $REPO_ROOT/env/install-env.sh..."
-	    INSTALL_SCRIPT="$REPO_ROOT/env/install-env.sh"
-	    if [ -f "$INSTALL_SCRIPT" ]; then
-		bash "$INSTALL_SCRIPT" # Use 'bash' to run, not 'source', due to sudo/installations
-		export MY_PROJECT_ENV_SETUP_COMPLETE="true"
-		echo "Initial environment setup complete. To re-run, unset MY_PROJECT_ENV_SETUP_COMPLETE."
-	    else
-		echo "ERROR: Environment setup script not found at $INSTALL_SCRIPT" >&2
-	    fi
-	fi
+#	if [ -z "$MY_PROJECT_ENV_SETUP_COMPLETE" ]; then
+#	    echo "Sourcing .reporc: Running initial environment setup from $REPO_ROOT/env/install-env.sh..."
+#	    INSTALL_SCRIPT="$REPO_ROOT/env/install-env.sh"
+#	    if [ -f "$INSTALL_SCRIPT" ]; then
+#		bash "$INSTALL_SCRIPT" # Use 'bash' to run, not 'source', due to sudo/installations
+#		export MY_PROJECT_ENV_SETUP_COMPLETE="true"
+#		echo "Initial environment setup complete. To re-run, unset MY_PROJECT_ENV_SETUP_COMPLETE."
+#	    else
+#		echo "ERROR: Environment setup script not found at $INSTALL_SCRIPT" >&2
+#	    fi
+#	fi
 
-fi
 
 # --- Project-specific Environment Variables ---
 # Add your repo's bin directory to PATH for project-specific scripts
