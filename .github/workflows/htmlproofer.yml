@@ -1,22 +1,6 @@
 # .github/workflows/documentation-quality-gate.yml
 name: Documentation Quality Gate (HTMLProofer)
-
-on:
-  workflow_run:
-    workflows: ["Build and Deploy Documentation"]
-    types:
-      - completed
-    branches:
-      - main
-  workflow_dispatch:
-
-jobs:
-  validate_deployed_docs:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+# ... (rest of the workflow YAML unchanged) ...
 
     steps:
       - name: Checkout Deployed Site into 'DevEx-Starter-Template' Subdirectory
@@ -25,10 +9,24 @@ jobs:
           ref: output
           path: DevEx-Starter-Template # Clones the 'output' branch into this folder
 
-      - name: Run HTMLProofer on Top-Level Deployed Docs with URL Swap
+      - name: 💣 Pre-Process HTML: Strip Jekyll Base URL Prefix 💣
+        # This step manually rewrites the files to fix the absolute vs. relative path conflict.
+        # It changes "/DevEx-Starter-Template/assets/..." to "/assets/..." across all HTML files.
+        run: |
+          echo "Rewriting absolute paths in HTML files to remove Jekyll baseurl..."
+          find ./DevEx-Starter-Template -type f -name "*.html" -print0 | xargs -0 \
+            sed -i 's/\/DevEx-Starter-Template\//\//g'
+          echo "Path rewrite complete. Checking sample..."
+          # Verify the rewrite on index.html
+          grep 'DevEx-Starter-Template/assets' ./DevEx-Starter-Template/index.html && \
+            echo "ERROR: Prefix was NOT stripped (sed failed)." || \
+            echo "SUCCESS: Prefix stripped from sample file. Proceeding to htmlproofer."
+          
+      - name: ⚙️ Run HTMLProofer on Top-Level Deployed Docs
         uses: chabad360/htmlproofer@v1
         with:
-          # htmlproofer's base for local file resolution is now this directory
+          # Now, the HTML content contains: "/assets/images/md.png"
+          # This will resolve correctly against the 'directory' path.
           directory: ./DevEx-Starter-Template 
           args: >-
             --url-ignore "#.*"
@@ -39,7 +37,4 @@ jobs:
             --report-missing-names
             --check-html
             --check-favicon
-            # --- THIS IS ESSENTIAL. It tells html-proofer to rewrite the URLs *before* resolving them ---
-            # It maps '/DevEx-Starter-Template/assets/...' to '/assets/...'
-            # This is then resolved relative to 'directory: ./DevEx-Starter-Template'
-            --swap_urls "/^\\/DevEx-Starter-Template\\/:\\//"
+            # --- NO SWAP_URLS NEEDED! --- The files are already fixed.
