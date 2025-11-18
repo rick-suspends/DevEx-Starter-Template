@@ -22,13 +22,13 @@ jobs:
       - name: Checkout Deployed Site from Output Branch
         uses: actions/checkout@v4
         with:
-          ref: output
+          ref: output # Checkout the deployed content from the 'output' branch
 
       - name: Run HTMLProofer on Deployed Docs
         uses: chabad360/htmlproofer@v1
         with:
-          directory: ./
-          args: >- # Use this multiline YAML syntax for clarity and complex arguments
+          directory: ./ # This is the local directory where the 'output' branch is checked out
+          args: >-
             --url-ignore "#.*"
             --url-ignore "/cdn-cgi/#.*"
             --allow-hash-href
@@ -37,5 +37,10 @@ jobs:
             --report-missing-names
             --check-html
             --check-favicon
-            --url-swap "/DevEx-Starter-Template/:/" # <--- This is the key addition
-            --root "/DevEx-Starter-Template/" # <--- This is the key addition
+            # --- THE CORRECTED ARGUMENT: --root_dir ---
+            # This tells htmlproofer the *local filesystem path* it's operating on.
+            # In the runner, when 'output' is checked out to './', the root dir is '.'
+            --root_dir ./ # <--- Use the correct flag and point it to the current directory
+            # And then, the key is to tell it how to interpret external URLs if they have a baseurl.
+            # --url-swap or --external_url is still needed for project pages baseurl handling
+            --url-swap "/^\\/DevEx-Starter-Template\\/:\\//" # Using the regex swap to remove the prefix
