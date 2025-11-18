@@ -145,6 +145,18 @@ echo "Converting via wkhtmltopdf with xvfb-run from $INTERMEDIATE_HTML_PATH to $
 xvfb-run --auto-servernum --server-args="-screen 0 1024x768x24" \
   /usr/bin/wkhtmltopdf "$INTERMEDIATE_HTML_PATH" "$OUTPUT_PDF_FILE"
 
+
+echo "Attempting PDF conversion with xvfb-run and wkhtmltopdf..."
+
+# Example of how your script might then check and exit:
+if [ -f "$OUTPUT_PDF_FILE" ]; then
+    echo "PDF generated successfully: $OUTPUT_PDF_FILE"
+    exit 0 # Your script should now explicitly exit 0 on success
+else
+    echo "ERROR: PDF was not generated at $OUTPUT_PDF_FILE" >&2
+    exit 1 # Your script should now explicitly exit 1 on failure
+fi
+
 # --- Stop the Python HTTP server ---
 echo "Stopping Python HTTP server (PID: $PYTHON_PID)..."
 if [ -n "$PYTHON_PID" ]; then
