@@ -38,6 +38,7 @@ alias mytest='cd "$REPO_ROOT" && python3 -m pytest' # Example
 
 alias db='docker build -t richardmallery/devex-starter-template:latest .'
 alias dp='docker push richardmallery/devex-starter-template'
+alias dx='cd ~/repos/DevEx-Starter-Template'
 
 alias gitgo="cd ~/repos/DevEx-Starter-Template && git add . && git commit -m 'pushing current updates automatically' && git push"
 
@@ -45,3 +46,5 @@ alias gitgo="cd ~/repos/DevEx-Starter-Template && git add . && git commit -m 'pu
 unset _THIS_DIR
 
 echo "Project environment variables and aliases loaded for $REPO_ROOT"
+
+
