@@ -11,7 +11,7 @@ jobs:
   build_deploy:
     runs-on: ubuntu-latest
     permissions:
-      contents: read # For checkout
+      contents: read # For checkout 
       pages: write   # Needed for GitHub Pages deployment
       id-token: write # Needed for actions/deploy-pages
 
