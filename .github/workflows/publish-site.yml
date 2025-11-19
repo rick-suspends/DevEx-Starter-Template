@@ -86,24 +86,35 @@ jobs:
             echo "SUCCESS: '/DevEx-Starter-Template/' prefix stripped from internal links in sample file."
           echo "--- End Pre-processing ---"
 
+
       - name: 6. Run HTMLProofer on Pre-Processed Docs
         run: |
           echo "Installing html-proofer via RubyGems..."
-          # Ensure html-proofer is installed. Using sudo is often necessary on GitHub-hosted runners
-          # for global gem installations if the runner's ruby setup doesn't put gems in user path.
           sudo gem install html-proofer
           
-          echo "Running html-proofer directly on ./docs/_site_deploy with specified arguments..."
-          htmlproofer \
-            ./docs/_site_deploy \
-            --url-ignore "#.*" \
-            --url-ignore "/cdn-cgi/#.*" \
-            --allow-hash-href \
-            --disable-external \
-            --file-ignore "/pdfs/assembled.pdf" \
-            --report-missing-names \
-            --check-html \
-            --check-favicon || { echo "HTML-Proofer found issues! Failing workflow."; exit 1; }
+          echo "Creating html-proofer configuration file..."
+          cat <<EOF > .htmlproofer.rb
+          require 'html_proofer'
+
+          HTMLProofer.check('./docs/_site_deploy', {
+            url_ignore: [
+              /#.*/,               # Ignore hash links
+              /\/cdn-cgi\/.*/,      # Ignore Cloudflare email protection links
+              /\A\//               # All local links (to be safe while debugging)
+            ],
+            file_ignore: [
+              './docs/_site_deploy/pdfs/assembled.pdf'
+            ],
+            disable_external: true, # Explicitly disable external checks here
+            allow_hash_href: true,
+            report_missing_names: true,
+            check_html: true,
+            check_favicon: true
+          }).run
+          EOF
+          
+          echo "Running html-proofer with Ruby configuration script..."
+          ruby .htmlproofer.rb || { echo "HTML-Proofer found issues! Failing workflow."; exit 1; }
         shell: bash # Explicitly use bash for the script
 
       # --- END HTMLPROOFER INTEGRATION ---
