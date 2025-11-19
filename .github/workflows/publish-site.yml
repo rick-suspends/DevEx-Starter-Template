@@ -90,7 +90,7 @@ jobs:
         uses: chabad360/htmlproofer@v1
         with:
           directory: ./docs/_site_deploy # Run directly on the built output
-          args: >-
+          args: | 
             --url-ignore "#.*"
             --url-ignore "/cdn-cgi/#.*"
             --allow-hash-href
