@@ -20,57 +20,60 @@ jobs:
     steps:
       - name: 1. Checkout repository
         uses: actions/checkout@v4
-        # This will include the pre-built docs/_site from your local push.
-        # It also includes the 'docs/pdfs/assembled.pdf' if your local script placed it there.
+        # This will now correctly include the pre-built docs/_site from your local push.
 
-      # --- Verification of docs/_site and PDF from local build ---
-      - name: 1.1 Debug docs/_site and PDF contents (From Local Push)
+      # --- Verification of docs/_site from local push ---
+      - name: 1.1 Debug docs/_site contents (From Local Push)
         working-directory: ${{ github.workspace }}
         run: |
           echo "--- Debugging contents of ./docs/_site from local push ---"
           if [ ! -d "./docs/_site" ]; then
-            echo "ERROR: ./docs/_site directory does NOT exist after checkout! Ensure you run 'jekyll build' locally before pushing."
+            echo "ERROR: ./docs/_site directory does NOT exist after checkout! It MUST be present for this workflow."
             exit 1
           fi
           echo "Directory ./docs/_site exists. Listing contents:"
           ls -R ./docs/_site || { echo "ERROR: Could not list contents of ./docs/_site!"; exit 1; }
           
-          echo "Checking for assembled.pdf in expected location:"
-          ls -l ./docs/_site/pdfs/assembled.pdf && echo "SUCCESS: assembled.pdf found in ./docs/_site/pdfs." || echo "ERROR: assembled.pdf NOT found in ./docs/_site/pdfs! Ensure 'assemble_docs_body.sh' places it correctly locally."
+          echo "Checking for 'DevEx-Starter-Template/' prefix in index.html (SHOULD BE PRESENT in _site):"
+          grep -m 1 'href="/DevEx-Starter-Template/' ./docs/_site/index.html && \
+            echo "SUCCESS: '/DevEx-Starter-Template/' prefix found. _site is configured for GH Pages." || \
+            echo "ERROR: '/DevEx-Starter-Template/' prefix NOT found. _site is NOT configured for GH Pages deployment."
           echo "--- End Debug ---"
 
       - name: 2. Run HTMLProofer on Pre-Built Docs
         uses: chabad360/htmlproofer@v1
         with:
-          directory: ./docs/_site # Point htmlproofer to the already existing _site
+          directory: ./docs/_site
           args: |
             --url-ignore "#.*"
             --url-ignore "/cdn-cgi/#.*"
             --allow-hash-href
             --disable-external
-            # PDF is now expected to be in _site, so htmlproofer will check it.
-            # If you want to ignore it, explicitly add it here: --file-ignore "/pdfs/assembled.pdf"
+            --file-ignore "/pdfs/assembled.pdf" # PDF is not yet created, so ignore.
             --report-missing-names
             --check-html
             --check-favicon
 
-      - name: 3. Install wkhtmltopdf (only if assemble_docs_body.sh needs it)
+      - name: 3. Install wkhtmltopdf (for PDF generation)
         run: |
           echo "Updating apt-get and installing wkhtmltopdf..."
           sudo apt-get update
           sudo apt-get install -y wkhtmltopdf
           echo "wkhtmltopdf installed."
 
-      - name: 4. Generate Documentation PDF (if not already present and only if script needs wkhtmltopdf)
+      - name: 4. Create Temporary PDF Directory
+        run: |
+          echo "Creating temporary directory for PDF output: ./ci_pdfs"
+          mkdir -p ./ci_pdfs || { echo "ERROR: Failed to create temporary PDF directory!"; exit 1; }
+          echo "Temporary PDF directory created."
+
+      - name: 5. Generate Documentation PDF
         working-directory: ${{ github.workspace }}
         run: |
-          echo "Running assemble_docs_body.sh script..."
-          # Your script is expected to place docs/pdfs/assembled.pdf into ./ci_pdfs/assembled.pdf
-          ./bin/assemble_docs_body.sh 
+          echo "Running assemble_docs_body.sh script, outputting to temporary directory..."
+          ./bin/assemble_docs_body.sh ./ci_pdfs/assembled.pdf 
           
-          # We are assuming the script places it directly into .ci_pdfs/assembled.pdf
-          # If the script output path is different, this check needs to change.
-          if [ -f "./ci_pdfs/assembled.pdf" ]; then # CHECK HERE for the final location
+          if [ -f "./ci_pdfs/assembled.pdf" ]; then
             echo "SUCCESS: PDF file (./ci_pdfs/assembled.pdf) successfully created by assemble_docs_body.sh."
             exit 0
           else
@@ -78,16 +81,54 @@ jobs:
             exit 1
           fi
 
-      - name: 5. Setup GitHub Pages Environment
+      # --- Prepare Final Deployment Artifact ---
+      - name: 6. Prepare Final Deployable Artifact
+        # Ensure this step is explicitly run from the workspace root to create the directory there.
+        working-directory: ${{ github.workspace }}
+        run: |
+          echo "Preparing final deployable artifact directory..."
+          FINAL_DEPLOY_ARTIFACT_DIR="_final_deploy_artifact"
+          mkdir -p "$FINAL_DEPLOY_ARTIFACT_DIR" || { echo "ERROR: Failed to create $FINAL_DEPLOY_ARTIFACT_DIR!"; exit 1; }
+          
+          echo "Copying contents of ./docs/_site to ./$FINAL_DEPLOY_ARTIFACT_DIR..."
+          cp -R -L ./docs/_site/* "$FINAL_DEPLOY_ARTIFACT_DIR"/ || { echo "ERROR: Failed to copy docs/_site contents!"; exit 1; }
+          
+          echo "Copying generated PDF into ./$FINAL_DEPLOY_ARTIFACT_DIR/pdfs..."
+          mkdir -p "$FINAL_DEPLOY_ARTIFACT_DIR"/pdfs || { echo "ERROR: Failed to create PDF directory in artifact!"; exit 1; }
+          cp ./ci_pdfs/assembled.pdf "$FINAL_DEPLOY_ARTIFACT_DIR"/pdfs/assembled.pdf || { echo "ERROR: Failed to copy generated PDF to artifact!"; exit 1; }
+          echo "Final deployable artifact prepared in ./$FINAL_DEPLOY_ARTIFACT_DIR."
+
+      - name: 6.1 Debug Final Deployable Artifact contents (Before Upload)
+        # This debug runs immediately before the upload, from the workspace root.
+        working-directory: ${{ github.workspace }}
+        run: |
+          FINAL_DEPLOY_ARTIFACT_DIR="_final_deploy_artifact"
+          echo "--- Final Debug: Contents of ./$FINAL_DEPLOY_ARTIFACT_DIR before upload ---"
+          if [ ! -d "$FINAL_DEPLOY_ARTIFACT_DIR" ]; then
+            echo "CRITICAL ERROR: Directory '$FINAL_DEPLOY_ARTIFACT_DIR' does NOT exist at this point!"
+            ls -al . # List all items in current directory
+            exit 1
+          fi
+          echo "Directory '$FINAL_DEPLOY_ARTIFACT_DIR' exists. Listing contents:"
+          ls -R "$FINAL_DEPLOY_ARTIFACT_DIR" || { echo "ERROR: Could not list contents of '$FINAL_DEPLOY_ARTIFACT_DIR'!"; exit 1; }
+          du -sh "$FINAL_DEPLOY_ARTIFACT_DIR" || { echo "ERROR: Could not get size of '$FINAL_DEPLOY_ARTIFACT_DIR'!"; exit 1; }
+          ls -l "$FINAL_DEPLOY_ARTIFACT_DIR"/pdfs/assembled.pdf && echo "SUCCESS: assembled.pdf found in artifact." || echo "ERROR: assembled.pdf NOT found in artifact!"
+          echo "--- End Debug ---"
+
+      - name: 7. Setup GitHub Pages Environment (for artifact upload)
         id: pages
         uses: actions/configure-pages@v5
 
-      - name: 6. Upload Pages artifact
+      - name: 8. Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './_final_deploy_artifact' # Upload the pre-built, now PDF-included _site
+          path: './_final_deploy_artifact' # Path is relative to GITHUB_WORKSPACE by default
+          # name: github-pages # This is the default name, not strictly needed but harmless.
+          # retention-days: 1 # Not strictly needed for Pages deployment, defaults to 90.
+        # This action automatically changes its working directory to the path provided before running tar.
+        # So, './_final_deploy_artifact' should point directly to the folder.
 
-      - name: 7. Deploy to GitHub Pages
+      - name: 9. Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
         with:
