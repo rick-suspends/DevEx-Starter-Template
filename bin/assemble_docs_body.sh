@@ -22,11 +22,11 @@ SCRIPT_DIR=$(dirname "$(realpath "$0")")
 PROJECT_ROOT=$(realpath "$SCRIPT_DIR/..")
 
 # Path to the Jekyll _site directory, relative to PROJECT_ROOT
-DOCS_SITE_RELATIVE_PATH="./ci_pdfs"
+DOCS_SITE_RELATIVE_PATH="./docs/_site"
 DOCS_SITE_DIR="$PROJECT_ROOT/$DOCS_SITE_RELATIVE_PATH"
 
 # New output directory for PDFs, relative to PROJECT_ROOT
-PDF_OUTPUT_DIR="$PROJECT_ROOT/docs/_site/pdfs"
+PDF_OUTPUT_DIR="$PROJECT_ROOT/ci_pdfs"
 
 # Intermediate HTML filename (will be created ONLY in SCRIPT_DIR - the bin directory)
 INTERMEDIATE_HTML_FILE="assembled_docs_body.html"
