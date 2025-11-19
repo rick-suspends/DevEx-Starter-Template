@@ -71,7 +71,7 @@ jobs:
           # Use bundle exec for jekyll build
           bundle exec jekyll build \
             --source ./docs \
-            --destination ./docs/_site_deploy
+            --destination ./docs/_site_deploy \
             --baseurl /DevEx-Starter-Template
           echo "Jekyll site built successfully to ./docs/_site_deploy."
 
