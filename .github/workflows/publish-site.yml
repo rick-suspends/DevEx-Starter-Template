@@ -153,3 +153,6 @@ jobs:
       - name: 10. Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} # Explicitly pass the token
+
