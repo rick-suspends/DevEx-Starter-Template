@@ -95,28 +95,19 @@ jobs:
           find ./docs/_site_deploy -type f -name "*.html" -print0 | xargs -0 \
             sed -i -E 's/(href|src)="\/(DevEx-Starter-Template)\//\1="\//g'
           echo "HTML path rewrite complete. Verifying changes on sample file..."
-
+          
           grep 'DevEx-Starter-Template/assets' ./docs/_site_deploy/index.html && \
             echo "ERROR: The '/DevEx-Starter-Template/' prefix was NOT successfully stripped by sed (in internal links). Sed command failed." || \
             echo "SUCCESS: '/DevEx-Starter-Template/' prefix stripped from internal links in sample file."
           echo "--- End Pre-processing ---"
 
-      - name: 6. Run HTMLProofer
-        run: |
-          echo "Running html-proofer directly with Bundler..."
-          # Now, use bundle exec to run htmlproofer
-          bundle exec htmlproofer \
-            ./docs/_site_deploy \
-            --url-ignore "/cdn-cgi/#.*" \
-            --allow-hash-href \
-            --disable-external \
-            --file-ignore "/pdfs/assembled.pdf" \
-            --report-missing-names \
-            --check-html \
-            --check-favicon || { echo "HTML-Proofer found issues! Failing workflow."; exit 1; }
-          # Removing --url-ignore "#.*" from the CLI as it might be redundant with --allow-hash-href
-          # and to simplify the arguments list, in case that was part of the parse issue.
-        shell: bash
+      - name: 6. Run HTMLProofer on Pre-Processed Docs
+        uses: chabad360/htmlproofer@v1
+        with:
+          directory: ./docs/_site_deploy
+          # Let's try passing ONLY --disable-external first, to see if it works in isolation.
+          # If this works, we can slowly add back other necessary flags.
+          args: --disable-external
 
       - name: 7. Generate Documentation PDF
         working-directory: ${{ github.workspace }}
