@@ -87,18 +87,25 @@ jobs:
           echo "--- End Pre-processing ---"
 
       - name: 6. Run HTMLProofer on Pre-Processed Docs
-        uses: chabad360/htmlproofer@v1
-        with:
-          directory: ./docs/_site_deploy # Run directly on the built output
-          args: | 
-            --url-ignore "#.*"
-            --url-ignore "/cdn-cgi/#.*"
-            --allow-hash-href
-            --disable-external
-            --file-ignore "/pdfs/assembled.pdf" 
-            --report-missing-names
-            --check-html
-            --check-favicon
+        run: |
+          echo "Installing html-proofer via RubyGems..."
+          # Ensure html-proofer is installed. Using sudo is often necessary on GitHub-hosted runners
+          # for global gem installations if the runner's ruby setup doesn't put gems in user path.
+          sudo gem install html-proofer
+          
+          echo "Running html-proofer directly on ./docs/_site_deploy with specified arguments..."
+          htmlproofer \
+            ./docs/_site_deploy \
+            --url-ignore "#.*" \
+            --url-ignore "/cdn-cgi/#.*" \
+            --allow-hash-href \
+            --disable-external \
+            --file-ignore "/pdfs/assembled.pdf" \
+            --report-missing-names \
+            --check-html \
+            --check-favicon || { echo "HTML-Proofer found issues! Failing workflow."; exit 1; }
+        shell: bash # Explicitly use bash for the script
+
       # --- END HTMLPROOFER INTEGRATION ---
 
       - name: 7. Generate Documentation PDF
