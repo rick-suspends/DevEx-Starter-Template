@@ -79,36 +79,38 @@ jobs:
             echo "WARNING: 'DevEx-Starter-Template' prefix NOT found in index.html (check if configure-pages worked)."
           echo "--- End Debug ---"
 
-      - name: 5. Pre-Process HTML Strip Jekyll Base URL Prefix (FOR HTMLPROOFER ONLY)
+      - name: 5. Prepare Temporary Directory for HTMLProofer & Pre-Process
         run: |
+          echo "Creating temporary directory for HTMLProofer operations..."
+          TEMP_HTMLPROOFER_DIR="./docs/_site_deploy_for_htmlproofer"
+          mkdir -p "$TEMP_HTMLPROOFER_DIR" || { echo "ERROR: Failed to create temporary directory!"; exit 1; }
+          
+          echo "Copying built site to temporary directory..."
+          # The -L flag for cp ensures symlinks are dereferenced, copying actual files.
+          cp -R -L ./docs/_site_deploy/* "$TEMP_HTMLPROOFER_DIR"/ || { echo "ERROR: Failed to copy files to temporary directory!"; exit 1; }
+          
           echo "Starting HTML pre-processing to remove Jekyll baseurl prefix from internal links for htmlproofer validation..."
-          
-          # CRITICAL FIX: Ensure files are writable before sed
-          # actions/jekyll-build-pages might set restrictive permissions.
-          chmod -R u+w ./docs/_site_deploy || { echo "ERROR: Failed to change permissions on _site_deploy!"; exit 1; }
-          echo "Permissions updated for ./docs/_site_deploy."
-          
           # The sed command removes the baseurl that Jekyll *just added* for htmlproofer's local checks.
-          # This makes htmlproofer validate paths as if baseurl were empty, mimicking local Jekyll serve.
-          find ./docs/_site_deploy -type f -name "*.html" -print0 | xargs -0 \
+          find "$TEMP_HTMLPROOFER_DIR" -type f -name "*.html" -print0 | xargs -0 \
             sed -i -E 's!(href|src)="(/DevEx-Starter-Template)(/|\.)!\1="\3!g'
-          echo "HTML path rewrite complete for htmlproofer. Verifying changes on sample file..."
           
-          grep 'href="/DevEx-Starter-Template/' ./docs/_site_deploy/index.html && \
+          echo "HTML path rewrite complete for htmlproofer. Verifying changes on sample file..."
+          grep 'href="/DevEx-Starter-Template/' "$TEMP_HTMLPROOFER_DIR"/index.html && \
             echo "ERROR: The '/DevEx-Starter-Template/' prefix was NOT successfully stripped by sed (in internal links). Sed command failed." || \
             echo "SUCCESS: '/DevEx-Starter-Template/' prefix stripped from internal links in sample file."
           echo "--- End Pre-processing for HTMLProofer ---"
 
-      - name: 6. Run HTMLProofer on Pre-Processed Docs
+      - name: 6. Run HTMLProofer on Temporary Pre-Processed Docs
         uses: chabad360/htmlproofer@v1
         with:
-          directory: ./docs/_site_deploy
+          # Point htmlproofer to the temporary directory
+          directory: ./docs/_site_deploy_for_htmlproofer 
           args: |
             --url-ignore "#.*" # Ignore hash-only links (e.g., <a href="#top">)
             --url-ignore "/cdn-cgi/#.*" # Ignore Cloudflare bot-protection links
             --allow-hash-href # Allow hash references in href attributes
             --disable-external # Only check internal links
-            --file-ignore "/pdfs/assembled.pdf" # Ignore the assembled PDF as it's not a standard HTML file
+            --file-ignore "/pdfs/assembled.pdf" # This ignore needs to be relative to the temporary directory.
             --report-missing-names # Report when links point to missing IDs/anchors
             --check-html # Check for HTML validity
             --check-favicon # Check for favicon presence
@@ -118,8 +120,8 @@ jobs:
         run: |
           echo "Preparing Jekyll _site for PDF generation script..."
           mkdir -p ./docs/_site || { echo "ERROR: Failed to create ./docs/_site directory!"; exit 1; }
-          # Copy the built _site_deploy content to ./docs/_site
-          cp -R ./docs/_site_deploy/* ./docs/_site/ || { echo "ERROR: Failed to copy contents to ./docs/_site!"; exit 1; }
+          # Copy from the ORIGINAL _site_deploy (which has the baseurl prefixes)
+          cp -R -L ./docs/_site_deploy/* ./docs/_site/ || { echo "ERROR: Failed to copy contents to ./docs/_site!"; exit 1; }
           echo "Contents of ./docs/_site_deploy copied to ./docs/_site."
 
       - name: 7.5 Debug docs/_site contents (Before PDF script)
@@ -163,7 +165,7 @@ jobs:
       - name: 10. Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './docs/_site_deploy' # Upload the final built site for GitHub Pages
+          path: './docs/_site_deploy' # Upload the ORIGINAL, baseurl-prefixed site
 
       - name: 11. Deploy to GitHub Pages
         id: deployment
