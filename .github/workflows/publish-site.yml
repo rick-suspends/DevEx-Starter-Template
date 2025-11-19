@@ -31,15 +31,15 @@ jobs:
       # --- FIRST JEKYLL BUILD: LOCAL STYLE (for HTMLProofer and PDF) ---
       # This builds to docs/_site, which will be writable for PDF copy.
       # Assumes 'jekyll' command is globally available and _config.yml has baseurl commented out.
-      - name: 3. Build Jekyll Site (Local Style - docs/_site)
-        working-directory: ${{ github.workspace }}
-        run: |
-          echo "Starting Jekyll build for local style (no baseurl) into ./docs/_site..."
-          jekyll build \
-            --source ./docs \
-            --destination ./docs/_site 
+      #- name: 3. Build Jekyll Site (Local Style - docs/_site)
+      #  working-directory: ${{ github.workspace }}
+      #  run: |
+      #    echo "Starting Jekyll build for local style (no baseurl) into ./docs/_site..."
+      #    jekyll build \
+      #      --source ./docs \
+      #      --destination ./docs/_site 
         
-          echo "Jekyll site built successfully to ./docs/_site."
+      #    echo "Jekyll site built successfully to ./docs/_site."
           
      
       - name: 4. HTMLProofer Check
@@ -62,56 +62,6 @@ jobs:
             echo "ERROR: PDF file (docs/pdfs/assembled.pdf) was NOT created, and assemble_docs_body.sh failed. Propagating failure."
             exit 1
           fi
-
-      # --- SECOND JEKYLL BUILD: GITHUB PAGES STYLE (for Deployment) ---
-      # This builds to docs/_site_for_gh_pages, which will be the final deployable artifact.
-      #- name: 7. Setup GitHub Pages Environment (CRITICAL FOR BASEURL)
-      #  id: pages
-      #  uses: actions/configure-pages@v5
-
-      #- name: 8. Build Jekyll Site for GitHub Pages Deployment
-      #  uses: actions/jekyll-build-pages@v1
-      #  with:
-      #    source: docs
-      #    destination: docs/_site_for_gh_pages # Output for GitHub Pages deployment
-      #    baseurl: ${{ steps.pages.outputs.base_url }} # Explicitly set baseurl for GH Pages
-
-      #- name: 8.1 Debug docs/_site_for_gh_pages contents (After GH Pages Style Build)
-      #  working-directory: ${{ github.workspace }}
-      #  run: |
-      #    echo "--- Debugging contents of ./docs/_site_for_gh_pages ---"
-      #    if [ ! -d "./docs/_site_for_gh_pages" ]; then
-      #      echo "ERROR: ./docs/_site_for_gh_pages directory does NOT exist after Jekyll build!"
-      #      exit 1
-      #    fi
-      #    echo "Directory ./docs/_site_for_gh_pages exists. Listing contents:"
-      #    ls -R ./docs/_site_for_gh_pages || { echo "ERROR: Could not list contents of ./docs/_site_for_gh_pages!"; exit 1; }
-          
-      #    echo "Checking for 'DevEx-Starter-Template/' prefix in index.html (SHOULD BE PRESENT):"
-      #    grep -m 1 'href="/DevEx-Starter-Template/' ./docs/_site_for_gh_pages/index.html && \
-      #      echo "SUCCESS: '/DevEx-Starter-Template/' prefix found. GH Pages build is correct." || \
-      #      echo "ERROR: '/DevEx-Starter-Template/' prefix NOT found. GH Pages build is incorrect!"
-      #    echo "--- End Debug ---"
-
-      #- name: 9. Copy PDF from Local Build Output to GitHub Pages Build Output
-      #  working-directory: ${{ github.workspace }}
-      #  run: |
-      #    echo "Copying generated PDF from ./docs/_site/pdfs to ./docs/_site_for_gh_pages/pdfs..."
-      #    FINAL_GH_PAGES_OUTPUT_DIR="./docs/_site_for_gh_pages"
-      #
-      #    # Ensure the target PDF directory exists within the restrictive GH Pages output.
-      #    # This mkdir -p is necessary, as actions/jekyll-build-pages might not create a /pdfs subdirectory.
-      #    mkdir -p "$FINAL_GH_PAGES_OUTPUT_DIR"/pdfs || { echo "ERROR: Failed to create $FINAL_GH_PAGES_OUTPUT_DIR/pdfs directory!"; exit 1; }
-      #
-      #    # This chmod IS necessary because _site_for_gh_pages (and its subdirectories) are created by actions/jekyll-build-pages
-      #    # and are typically read-only for subsequent shell commands.
-      #    chmod u+w "$FINAL_GH_PAGES_OUTPUT_DIR"/pdfs || { echo "ERROR: Failed to change permissions on $FINAL_GH_PAGES_OUTPUT_DIR/pdfs!"; exit 1; }
-      #    echo "Permissions updated for $FINAL_GH_PAGES_OUTPUT_DIR/pdfs."
-      #
-      #    # Copy the PDF from the writable docs/_site (from the first build)
-      #    # to the now-writable docs/_site_for_gh_pages/pdfs
-      #    cp docs/_site/pdfs/assembled.pdf "$FINAL_GH_PAGES_OUTPUT_DIR"/pdfs/assembled.pdf || { echo "ERROR: Failed to copy assembled.pdf!"; exit 1; }
-      #    echo "PDF copied to $FINAL_GH_PAGES_OUTPUT_DIR/pdfs/assembled.pdf."
 
       - name: 10. Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
