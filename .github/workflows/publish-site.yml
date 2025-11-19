@@ -5,35 +5,31 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: # Allows manual triggering of the workflow
+  workflow_dispatch:
 
 jobs:
   build_deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pages: write   # Needed for GitHub Pages deployment
-      id-token: write # Needed for actions/deploy-pages@v4
-    environment: # Required for actions/deploy-pages@v4
+      pages: write
+      id-token: write
+    environment:
       name: github-pages
 
     steps:
       - name: 1. Checkout repository
         uses: actions/checkout@v4
-        # Ensures the repository is cloned directly into ${{ github.workspace }}
-        # Do NOT add a 'path' argument here, as it can cause duplicate path issues.
 
       - name: 2. Set up Ruby Environment (for html-proofer and wkhtmltopdf)
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.1' # Or your desired Ruby version
+          ruby-version: '3.1'
 
       - name: 2.1 Prepare Gemfile (for html-proofer)
         run: |
           echo "source 'https://rubygems.org'" > Gemfile
           echo "gem 'html-proofer', '~> 5.1'" >> Gemfile
-          # actions/jekyll-build-pages will install Jekyll internally,
-          # but keeping 'jekyll' here for html-proofer's dependencies if needed.
           echo "gem 'jekyll'" >> Gemfile 
 
       - name: 2.2 Bundle Install Gems (for html-proofer)
@@ -51,15 +47,12 @@ jobs:
       - name: 3. Setup GitHub Pages Environment (CRITICAL FOR BASEURL)
         id: pages
         uses: actions/configure-pages@v5
-        # This action automatically sets JEKYLL_BASEURL based on your repository type
-        # (e.g., /DevEx-Starter-Template/ for project pages) and other env vars.
 
       - name: 4. Build Jekyll Site with Official Action
         uses: actions/jekyll-build-pages@v1
         with:
-          source: ./docs # Your Jekyll source directory
-          destination: ./docs/_site_deploy # Your desired output directory
-          # No need to explicitly set baseurl here; configure-pages and jekyll-build-pages handle it.
+          source: ./docs
+          destination: ./docs/_site_deploy # Output is here, but it's read-only
 
       - name: 4.5 Debug docs/_site_deploy contents (After Jekyll Build)
         working-directory: ${{ github.workspace }}
@@ -72,25 +65,33 @@ jobs:
           echo "Directory ./docs/_site_deploy exists. Listing contents:"
           ls -R ./docs/_site_deploy || { echo "ERROR: Could not list contents of ./docs/_site_deploy!"; exit 1; }
           
-          # This grep should now succeed, as the baseurl should be applied by the official action.
           echo "Checking for 'DevEx-Starter-Template' prefix in generated HTML (e.g., in index.html):"
           grep -m 1 'href="/DevEx-Starter-Template/' ./docs/_site_deploy/index.html && \
             echo "SUCCESS: 'DevEx-Starter-Template' prefix found in index.html. Jekyll baseurl is working." || \
             echo "WARNING: 'DevEx-Starter-Template' prefix NOT found in index.html (check if configure-pages worked)."
           echo "--- End Debug ---"
 
-      - name: 5. Prepare Temporary Directory for HTMLProofer & Pre-Process
+      # --- CRITICAL FIX: Copy _site_deploy to a fully writable temp directory ---
+      # ALL subsequent operations (htmlproofer, PDF copy, artifact upload) will use this new directory.
+      - name: 5. Prepare Final Deployment Directory (Fully Writable)
         run: |
-          echo "Creating temporary directory for HTMLProofer operations..."
-          TEMP_HTMLPROOFER_DIR="./docs/_site_deploy_for_htmlproofer"
-          mkdir -p "$TEMP_HTMLPROOFER_DIR" || { echo "ERROR: Failed to create temporary directory!"; exit 1; }
-          
-          echo "Copying built site to temporary directory..."
-          # The -L flag for cp ensures symlinks are dereferenced, copying actual files.
-          cp -R -L ./docs/_site_deploy/* "$TEMP_HTMLPROOFER_DIR"/ || { echo "ERROR: Failed to copy files to temporary directory!"; exit 1; }
-          
+          echo "Creating final writable deployment directory and copying Jekyll build..."
+          FINAL_DEPLOY_DIR="./docs/_final_site_for_deployment"
+          mkdir -p "$FINAL_DEPLOY_DIR" || { echo "ERROR: Failed to create final deployment directory!"; exit 1; }
+          # Copy everything from the restrictive _site_deploy to the new writable directory
+          cp -R -L ./docs/_site_deploy/* "$FINAL_DEPLOY_DIR"/ || { echo "ERROR: Failed to copy Jekyll build to final deployment directory!"; exit 1; }
+          echo "Jekyll build copied to $FINAL_DEPLOY_DIR."
+          # Set explicit permissions here, just to be absolutely sure, though it should be owned by runner.
+          chmod -R u+w "$FINAL_DEPLOY_DIR" || { echo "ERROR: Failed to set permissions on final deployment directory!"; exit 1; }
+          echo "Permissions updated for $FINAL_DEPLOY_DIR."
+      # --- END CRITICAL FIX ---
+
+      - name: 5.1 Pre-Process HTML Strip Jekyll Base URL Prefix (FOR HTMLPROOFER ONLY)
+        run: |
           echo "Starting HTML pre-processing to remove Jekyll baseurl prefix from internal links for htmlproofer validation..."
-          # The sed command removes the baseurl that Jekyll *just added* for htmlproofer's local checks.
+          # Use the NEWLY CREATED, writable directory for sed operations
+          TEMP_HTMLPROOFER_DIR="./docs/_final_site_for_deployment" # Point to the new master copy
+          
           find "$TEMP_HTMLPROOFER_DIR" -type f -name "*.html" -print0 | xargs -0 \
             sed -i -E 's!(href|src)="(/DevEx-Starter-Template)(/|\.)!\1="\3!g'
           
@@ -100,29 +101,29 @@ jobs:
             echo "SUCCESS: '/DevEx-Starter-Template/' prefix stripped from internal links in sample file."
           echo "--- End Pre-processing for HTMLProofer ---"
 
-      - name: 6. Run HTMLProofer on Temporary Pre-Processed Docs
+      - name: 6. Run HTMLProofer on Pre-Processed Docs
         uses: chabad360/htmlproofer@v1
         with:
-          # Point htmlproofer to the temporary directory
-          directory: ./docs/_site_deploy_for_htmlproofer 
+          # Point htmlproofer to the new master copy
+          directory: ./docs/_final_site_for_deployment 
           args: |
-            --url-ignore "#.*" # Ignore hash-only links (e.g., <a href="#top">)
-            --url-ignore "/cdn-cgi/#.*" # Ignore Cloudflare bot-protection links
-            --allow-hash-href # Allow hash references in href attributes
-            --disable-external # Only check internal links
-            --file-ignore "/pdfs/assembled.pdf" # This ignore needs to be relative to the temporary directory.
-            --report-missing-names # Report when links point to missing IDs/anchors
-            --check-html # Check for HTML validity
-            --check-favicon # Check for favicon presence
+            --url-ignore "#.*"
+            --url-ignore "/cdn-cgi/#.*"
+            --allow-hash-href
+            --disable-external
+            --file-ignore "/pdfs/assembled.pdf"
+            --report-missing-names
+            --check-html
+            --check-favicon
 
       - name: 7. Prepare Jekyll _site for PDF generation
         working-directory: ${{ github.workspace }}
         run: |
           echo "Preparing Jekyll _site for PDF generation script..."
           mkdir -p ./docs/_site || { echo "ERROR: Failed to create ./docs/_site directory!"; exit 1; }
-          # Copy from the ORIGINAL _site_deploy (which has the baseurl prefixes)
-          cp -R -L ./docs/_site_deploy/* ./docs/_site/ || { echo "ERROR: Failed to copy contents to ./docs/_site!"; exit 1; }
-          echo "Contents of ./docs/_site_deploy copied to ./docs/_site."
+          # Copy from the NEW, fully writable copy for PDF generation
+          cp -R -L ./docs/_final_site_for_deployment/* ./docs/_site/ || { echo "ERROR: Failed to copy contents to ./docs/_site!"; exit 1; }
+          echo "Contents of ./docs/_final_site_for_deployment copied to ./docs/_site."
 
       - name: 7.5 Debug docs/_site contents (Before PDF script)
         working-directory: ${{ github.workspace }}
@@ -145,30 +146,34 @@ jobs:
             exit 1
           fi
 
-      - name: 9. Move PDF into _site_deploy (for deployment)
+      - name: 9. Move PDF into Final Deployment Directory
         working-directory: ${{ github.workspace }}
         run: |
-          echo "Moving generated PDF into the final Jekyll build directory (./docs/_site_deploy)..."
-          mkdir -p docs/_site_deploy/pdfs || { echo "ERROR: Failed to create docs/_site_deploy/pdfs directory!"; exit 1; }
-          cp docs/pdfs/assembled.pdf docs/_site_deploy/pdfs/assembled.pdf || { echo "ERROR: Failed to copy assembled.pdf!"; exit 1; }
-          echo "PDF copied to docs/_site_deploy/pdfs/assembled.pdf."
+          echo "Moving generated PDF into the final deployment directory (./docs/_final_site_for_deployment)..."
+          FINAL_DEPLOY_DIR="./docs/_final_site_for_deployment" # Redefine for clarity
+          
+          mkdir -p "$FINAL_DEPLOY_DIR"/pdfs || { echo "ERROR: Failed to create $FINAL_DEPLOY_DIR/pdfs directory!"; exit 1; }
+          # No chmod needed here, as $FINAL_DEPLOY_DIR is already fully writable
+          cp docs/pdfs/assembled.pdf "$FINAL_DEPLOY_DIR"/pdfs/assembled.pdf || { echo "ERROR: Failed to copy assembled.pdf!"; exit 1; }
+          echo "PDF copied to $FINAL_DEPLOY_DIR/pdfs/assembled.pdf."
 
-      - name: 9.5 Debug _site_deploy contents (Final check before deploy)
+      - name: 9.5 Debug Final Deployment Directory contents (Final check before deploy)
         working-directory: ${{ github.workspace }}
         run: |
-          echo "--- Final check of ./docs/_site_deploy contents before deployment ---"
-          ls -R ./docs/_site_deploy || { echo "ERROR: ./docs/_site_deploy directory does NOT exist!"; exit 1; }
-          du -sh ./docs/_site_deploy || { echo "ERROR: Could not get size of ./docs/_site_deploy!"; exit 1; }
-          ls -l ./docs/_site_deploy/pdfs/assembled.pdf && echo "SUCCESS: assembled.pdf found in deployment directory." || echo "WARNING: assembled.pdf NOT found in deployment directory!"
+          FINAL_DEPLOY_DIR="./docs/_final_site_for_deployment"
+          echo "--- Final check of $FINAL_DEPLOY_DIR contents before deployment ---"
+          ls -R "$FINAL_DEPLOY_DIR" || { echo "ERROR: $FINAL_DEPLOY_DIR directory does NOT exist!"; exit 1; }
+          du -sh "$FINAL_DEPLOY_DIR" || { echo "ERROR: Could not get size of $FINAL_DEPLOY_DIR!"; exit 1; }
+          ls -l "$FINAL_DEPLOY_DIR"/pdfs/assembled.pdf && echo "SUCCESS: assembled.pdf found in deployment directory." || echo "WARNING: assembled.pdf NOT found in deployment directory!"
           echo "--- End Final Debug ---"
           
       - name: 10. Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './docs/_site_deploy' # Upload the ORIGINAL, baseurl-prefixed site
+          path: './docs/_final_site_for_deployment' # Upload the new, fully-modified directory
 
       - name: 11. Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4 # Use the working v4 version
+        uses: actions/deploy-pages@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }} # Explicitly pass the token for clarity
+          token: ${{ secrets.GITHUB_TOKEN }}
