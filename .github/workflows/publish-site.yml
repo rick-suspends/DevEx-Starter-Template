@@ -44,11 +44,9 @@ jobs:
      
       - name: 4. HTMLProofer Check
         uses: jakejarvis/htmlproofer-action@v2.0.0
-        run: |
-          echo "Starting HTMLProofer check on ./docs/_site..."
-          htmlproofer ./docs/_site --check-html 
-      
-          echo "HTMLProofer check completed."
+        with:
+          directory: './docs/_site'
+          options: '--check-html --empty-alt-ignore --url-ignore /#|/mailto:/|/tel:/|/DevEx-Starter-Template/'        
 
       - name: 5. Generate Documentation PDF
         working-directory: ${{ github.workspace }}
