@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <title>Jekyll system | </title>
+    
+    <link rel="stylesheet" href="/assets/css/main.css">
+</head>
+
+<body>
+    <header>
+        <div id="site-header-content">
+            <div id="header-title">
+                <a href="/"> Documentation</a>
+            </div>
+            <div id="logo-panel">
+                <img src="/assets/images/md.png" alt="">
+                <i class="fas fa-arrow-right"></i>
+                <img src="/assets/images/jekyll-full.png" alt="">
+                <i class="fas fa-arrow-right"></i>
+                <img src="/assets/images/html-css-js.png" alt="">
+                <i class="fas fa-arrow-right"></i>
+                <img src="/assets/images/github.png" alt="">
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        
+        
+        <nav class="sidebar">
+        <ul>
+            
+            <li>
+                <a href="index.html">Overview</a>
+                
+            </li>
+            
+            <li>
+                <a href="jekyll-system.html">Jekyll system</a>
+                
+            </li>
+            
+        </ul>
+        </nav>
+
+        <main class="content">
+            <div class="markdown-body">
+                <h1 id="jekyll-system">Jekyll system</h1>
+
+<div class="language-text highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/docs
+    ├── _config.yml           # Jekyll configuration file
+    ├── _data                 # Data files for Jekyll
+    │     └── tree.yml        # Site structure for sidebar navigation
+    ├── _layouts              # Jekyll layout templates
+    │     └── page.html       # Layout for documentation pages
+    ├── _includes             # Jekyll includes (reusable components)
+    ├── _site                 # Generated site (output)
+    ├── assets                # CSS, JS, images
+    │     ├── css
+    │     │    └── main.css   # Main stylesheet
+    │     ├── js
+    │     │    └── main.js    # Main JavaScript file
+    │     └── images          # Image assets
+    ├── topics                # Markdown documentation content
+    │     └── &lt;your-docs&gt;.md  # Your documentation files
+    └── index.md              # Home page content
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">_config.yml</code>: This file contains configuration settings for the Jekyll site, and is also the place to define external resources such as plugins and themes.</p>
+
+    <p>The current configuration defines the minimum settings: where the source files are located and the destination for the generated site.</p>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">_data/tree.yml</code>: This file defines the structure of the documentation site for generating the sidebar navigation. It uses a simple YAML format to list the titles and URLs of the pages in the documentation.</p>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">_layouts</code>: This directory holds layout templates that define the structure of your documentation pages. The <code class="language-plaintext highlighter-rouge">page.html</code> layout is the default for rendering individual documentation pages.</p>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">_includes</code>: This directory contains reusable components that can be included in multiple pages, such as headers, footers, navigation elements, and boilerplate text. From your content, you include these components with Liquid tags, such as <code class="language-plaintext highlighter-rouge">{% include header.html %}</code>.</p>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">_site</code>: This is the output directory where Jekyll generates the static site.</p>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">assets</code>: This directory contains static assets like CSS, JavaScript, and images used in the documentation.</p>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">topics</code>: This directory contains the Markdown files for your documentation content.</p>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">index.md</code>: This file serves as the home page for your documentation site.</p>
+  </li>
+</ul>
+
+<p><strong>A note on underscores</strong>: In Jekyll, directories and files that start with an underscore (<code class="language-plaintext highlighter-rouge">_</code>) are not generated in the static site, but Jekyll uses them for templating and configuration. You can also create your own directories and files that start with an underscore for work in progress or topics you want to remove from the released documentation but keep for future work, or simply store internal notes in them.</p>
+
+<p>For more information on Jekyll’s structure and conventions, refer to the <a href="https://jekyllrb.com/docs/structure/">Jekyll documentation</a>.</p>
+
+<h2 id="generating-and-previewing-the-site">Generating and previewing the site</h2>
+
+<p>To run a local Jekyll server for previewing your documentation site, use the following command in your terminal:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>jekyll server
+</code></pre></div></div>
+
+<p>This command starts a local server and watches for changes in your files, allowing you to see updates in real-time as you edit your documentation. By default, the server is accessible at <code class="language-plaintext highlighter-rouge">http://localhost:4000</code>.</p>
+
+<p>You can also build the site without starting a server using:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>jekyll build
+</code></pre></div></div>
+
+<p>This command generates the static site in the <code class="language-plaintext highlighter-rouge">_site</code> directory without serving it. You can then deploy the contents of the <code class="language-plaintext highlighter-rouge">_site</code> directory to your web server or hosting service, or as in this DevEx Starter Template examples, doing a <code class="language-plaintext highlighter-rouge">git push</code> automatically starts a GitHub Action that updates the GitHub Pages site with the updated content.</p>
+
+
+            </div>
+            
+            
+            
+        </main>
+    </div>
+
+    <footer>
+        <p>&copy; 2025  | Built with Jekyll & GitHub Actions</p>
+    </footer>
+
+</body>
+</html>
