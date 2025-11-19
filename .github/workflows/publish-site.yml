@@ -43,7 +43,7 @@ jobs:
           
      
       - name: 4. HTMLProofer Check
-        uses: chabad360/htmlproofer-action@v1 
+        uses: chabad360/htmlproofer@v1 
         with:
           directory: './docs/_site'
           args: |
