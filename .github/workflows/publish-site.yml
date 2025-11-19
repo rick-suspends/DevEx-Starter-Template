@@ -43,10 +43,11 @@ jobs:
           
      
       - name: 4. HTMLProofer Check
-        uses: jakejarvis/htmlproofer-action@v2.0.0
+        uses: chabad360/htmlproofer-action@v1 
         with:
           directory: './docs/_site'
-          options: '--check-html --empty-alt-ignore --url-ignore /#|/mailto:/|/tel:/|/DevEx-Starter-Template/'        
+          args: |
+            --check-html
 
       - name: 5. Generate Documentation PDF
         working-directory: ${{ github.workspace }}
