@@ -44,7 +44,6 @@ jobs:
      
       - name: 4. HTMLProofer Check
         uses: jakejarvis/htmlproofer-action@v2.0.0
-        working-directory: ${{ github.workspace }}
         run: |
           echo "Starting HTMLProofer check on ./docs/_site..."
           htmlproofer ./docs/_site --check-html 
