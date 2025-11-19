@@ -1,0 +1,161 @@
+# .github/workflows/publish-site.yml
+name: Build _site and generate PDF
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build_deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # For checkout 
+      pages: write   # Needed for GitHub Pages deployment
+      id-token: write # Needed for actions/deploy-pages
+
+    steps:
+      - name: 1. Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 2. Set up Ruby Environment
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.1'
+          # Ensure a Gemfile exists in the root of your project or where Jekyll is built.
+          # If Jekyll already uses a Gemfile, html-proofer can be added there.
+          # If not, we'll create a minimal one.
+
+      # --- NEW STEPS FOR BUNDLER AND HTMLPROOFER ---
+      - name: 2.1 Prepare Gemfile for HTMLProofer
+        run: |
+          # Create a Gemfile if one doesn't exist, or append to it.
+          # Assuming you might already have a Gemfile for Jekyll in docs/_config.yml parent.
+          # For now, let's place it at the root of the workflow's working directory.
+          echo "source 'https://rubygems.org'" > Gemfile
+          echo "gem 'html-proofer', '~> 5.1'" >> Gemfile # Pin to a compatible version
+          echo "gem 'jekyll'" >> Gemfile # Ensure jekyll is also here if not already in your docs Gemfile
+
+          # If you have a Gemfile for Jekyll *inside* your docs directory, you might
+          # need to ensure html-proofer is added there, or manage them separately.
+          # For simplicity, let's assume this Gemfile at the root is sufficient for htmlproofer.
+
+      - name: 2.2 Bundle Install Gems
+        run: |
+          echo "Running bundle install to get html-proofer and other gems..."
+          bundle install --jobs 4 --retry 3 # Install gems using Bundler
+      # --- END NEW BUNDLER STEPS ---
+
+      - name: 2.3 Install wkhtmltopdf (for PDF generation) # Renumbered this step
+        run: |
+          echo "Updating apt-get and installing wkhtmltopdf..."
+          sudo apt-get update
+          sudo apt-get install -y wkhtmltopdf
+          echo "wkhtmltopdf installed."
+
+      - name: 3. Verify Jekyll Installation (DEBUG)
+        run: |
+          echo "--- Verifying Jekyll availability ---"
+          # Use bundle exec for jekyll as well, for consistency
+          bundle exec jekyll -v || { echo "ERROR: Jekyll version command failed!"; exit 1; }
+          echo "Jekyll is installed and accessible: $(bundle exec jekyll -v)"
+          echo "Current PATH: $PATH"
+          echo "--- End Jekyll Verification ---"
+
+      - name: 4. Build Jekyll Site for Deployment
+        working-directory: ${{ github.workspace }}
+        run: |
+          echo "Starting Jekyll build..."
+          echo "Current working directory: $(pwd)"
+          # Use bundle exec for jekyll build
+          bundle exec jekyll build \
+            --source ./docs \
+            --destination ./docs/_site_deploy
+            --baseurl /DevEx-Starter-Template
+          echo "Jekyll site built successfully to ./docs/_site_deploy."
+
+      - name: 4.5 Debug docs/_site_deploy contents (After Jekyll Build)
+        working-directory: ${{ github.workspace }}
+        run: |
+          echo "--- Debugging contents of ./docs/_site_deploy ---"
+          if [ ! -d "./docs/_site_deploy" ]; then
+            echo "ERROR: ./docs/_site_deploy directory does NOT exist after Jekyll build!"
+            exit 1
+          fi
+          echo "Directory ./docs/_site_deploy exists. Listing contents:"
+          ls -R ./docs/_site_deploy || { echo "ERROR: Could not list contents of ./docs/_site_deploy!"; exit 1; }
+
+          echo "Checking for 'DevEx-Starter-Template' prefix in generated HTML (e.g., in index.html):"
+          grep -m 1 'DevEx-Starter-Template/assets' ./docs/_site_deploy/index.html && \
+            echo "SUCCESS: 'DevEx-Starter-Template' prefix found in index.html. Jekyll baseurl is working." || \
+            echo "WARNING: 'DevEx-Starter-Template' prefix NOT found in index.html (check docs/_config.yml baseurl)."
+          echo "--- End Debug ---"
+
+      - name: 5. Pre-Process HTML Strip Jekyll Base URL Prefix
+        run: |
+          echo "Starting HTML pre-processing to remove Jekyll baseurl prefix from internal links..."
+          find ./docs/_site_deploy -type f -name "*.html" -print0 | xargs -0 \
+            sed -i -E 's/(href|src)="\/(DevEx-Starter-Template)\//\1="\//g'
+          echo "HTML path rewrite complete. Verifying changes on sample file..."
+          
+          grep 'DevEx-Starter-Template/assets' ./docs/_site_deploy/index.html && \
+            echo "ERROR: The '/DevEx-Starter-Template/' prefix was NOT successfully stripped by sed (in internal links). Sed command failed." || \
+            echo "SUCCESS: '/DevEx-Starter-Template/' prefix stripped from internal links in sample file."
+          echo "--- End Pre-processing ---"
+
+      - name: 6. Run HTMLProofer on Pre-Processed Docs
+        uses: chabad360/htmlproofer@v1
+        with:
+          directory: ./docs/_site_deploy
+          # Let's try passing ONLY --disable-external first, to see if it works in isolation.
+          # If this works, we can slowly add back other necessary flags.
+          args: --disable-external
+
+      - name: 7. Generate Documentation PDF
+        working-directory: ${{ github.workspace }}
+        run: |
+          echo "Preparing Jekyll _site for PDF generation script..."
+          mkdir -p ./docs/_site
+          cp -R ./docs/_site_deploy/* ./docs/_site/
+          echo "Contents of ./docs/_site_deploy copied to ./docs/_site."
+
+          echo "Running assemble_docs_body.sh script..."
+          ./bin/assemble_docs_body.sh
+
+          if [ -f "docs/pdfs/assembled.pdf" ]; then
+            echo "SUCCESS: PDF file (docs/pdfs/assembled.pdf) successfully created by assemble_docs_body.sh."
+            exit 0
+          else
+            echo "ERROR: PDF file (docs/pdfs/assembled.pdf) was NOT created, and assemble_docs_body.sh failed. Propagating failure."
+            exit 1
+          fi
+
+      - name: 8. Move PDF into _site_deploy (for deployment)
+        working-directory: ${{ github.workspace }}
+        run: |
+          echo "Moving generated PDF into the final Jekyll build directory (./docs/_site_deploy)..."
+          mkdir -p docs/_site_deploy/pdfs || { echo "ERROR: Failed to create docs/_site_deploy/pdfs directory!"; exit 1; }
+          cp docs/pdfs/assembled.pdf docs/_site_deploy/pdfs/assembled.pdf || { echo "ERROR: Failed to copy assembled.pdf!"; exit 1; }
+          echo "PDF copied to docs/_site_deploy/pdfs/assembled.pdf."
+
+      - name: 8.5 Debug _site_deploy contents (Final check before deploy)
+        working-directory: ${{ github.workspace }}
+        run: |
+          echo "--- Final check of ./docs/_site_deploy contents before deployment ---"
+          ls -R ./docs/_site_deploy || { echo "ERROR: ./docs/_site_deploy directory does NOT exist!"; exit 1; }
+          du -sh ./docs/_site_deploy || { echo "ERROR: Could not get size of ./docs/_site_deploy!"; exit 1; }
+          ls -l ./docs/_site_deploy/pdfs/assembled.pdf && echo "SUCCESS: assembled.pdf found in deployment directory." || echo "WARNING: assembled.pdf NOT found in deployment directory!"
+          echo "--- End Final Debug ---"
+
+      - name: 9. Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './docs/_site_deploy'
+
+      - name: 10. Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} # Explicitly pass the token
+
