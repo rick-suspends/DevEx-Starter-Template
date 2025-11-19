@@ -28,6 +28,7 @@ jobs:
           sudo apt-get install -y wkhtmltopdf
           echo "wkhtmltopdf installed."
           echo "Workspace: ${{ github.workspace }}"
+          pwd 
 
       # --- FIRST JEKYLL BUILD: LOCAL STYLE (for HTMLProofer and PDF) ---
       # This builds to docs/_site, which will be writable for PDF copy.
