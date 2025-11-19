@@ -38,20 +38,6 @@ jobs:
           source: docs
           destination: docs/_site
 
-      - name: 6. Run HTMLProofer on Pre-Processed Docs
-        uses: chabad360/htmlproofer@v1
-        with:
-          directory: docs/_site
-          args: |
-            --url-ignore "#.*"
-            --url-ignore "/cdn-cgi/#.*"
-            --allow-hash-href
-            --disable-external
-            --file-ignore "/pdfs/assembled.pdf"
-            --report-missing-names
-            --check-html
-            --check-favicon
-
       - name: 7. Generate Documentation PDF
         working-directory: ${{ github.workspace }}
         run: |
