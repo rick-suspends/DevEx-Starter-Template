@@ -52,7 +52,10 @@ jobs:
         uses: actions/jekyll-build-pages@v1
         with:
           source: ./docs
-          destination: ./docs/_site_deploy # Output is here, but it's read-only
+          destination: ./docs/_site_deploy
+          # *** CRITICAL FIX: Explicitly pass the base_url from configure-pages ***
+          baseurl: ${{ steps.pages.outputs.base_url }}
+          # This should force the baseurl to be applied by the Jekyll build.
 
       - name: 4.5 Debug docs/_site_deploy contents (After Jekyll Build)
         working-directory: ${{ github.workspace }}
@@ -66,10 +69,12 @@ jobs:
           ls -R ./docs/_site_deploy || { echo "ERROR: Could not list contents of ./docs/_site_deploy!"; exit 1; }
           
           echo "Checking for 'DevEx-Starter-Template' prefix in generated HTML (e.g., in index.html):"
+          # This grep *must* now succeed if the 'baseurl' input worked.
           grep -m 1 'href="/DevEx-Starter-Template/' ./docs/_site_deploy/index.html && \
             echo "SUCCESS: 'DevEx-Starter-Template' prefix found in index.html. Jekyll baseurl is working." || \
-            echo "WARNING: 'DevEx-Starter-Template' prefix NOT found in index.html (check if configure-pages worked)."
+            echo "ERROR: 'DevEx-Starter-Template' prefix NOT found in index.html. Explicit baseurl input to jekyll-build-pages failed!"
           echo "--- End Debug ---"
+      
 
       # --- CRITICAL FIX: Copy _site_deploy to a fully writable temp directory ---
       # ALL subsequent operations (htmlproofer, PDF copy, artifact upload) will use this new directory.
