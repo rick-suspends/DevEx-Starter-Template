@@ -41,7 +41,7 @@ jobs:
       - name: 6. Run HTMLProofer on Pre-Processed Docs
         uses: chabad360/htmlproofer@v1
         with:
-          directory: _site
+          directory: docs/_site
           args: |
             --url-ignore "#.*"
             --url-ignore "/cdn-cgi/#.*"
