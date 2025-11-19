@@ -65,16 +65,16 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
           echo "Running assemble_docs_body.sh script..."
-          # Your script is expected to place docs/pdfs/assembled.pdf into docs/_site/pdfs/assembled.pdf
+          # Your script is expected to place docs/pdfs/assembled.pdf into ./ci_pdfs/assembled.pdf
           ./bin/assemble_docs_body.sh 
           
-          # We are assuming the script places it directly into docs/_site/pdfs/assembled.pdf
+          # We are assuming the script places it directly into .ci_pdfs/assembled.pdf
           # If the script output path is different, this check needs to change.
-          if [ -f "docs/_site/pdfs/assembled.pdf" ]; then # CHECK HERE for the final location
-            echo "SUCCESS: PDF file (docs/_site/pdfs/assembled.pdf) successfully created by assemble_docs_body.sh."
+          if [ -f "./ci_pdfs/assembled.pdf" ]; then # CHECK HERE for the final location
+            echo "SUCCESS: PDF file (./ci_pdfs/assembled.pdf) successfully created by assemble_docs_body.sh."
             exit 0
           else
-            echo "ERROR: PDF file (docs/_site/pdfs/assembled.pdf) was NOT created, and assemble_docs_body.sh failed. Propagating failure."
+            echo "ERROR: PDF file (./ci_pdfs/assembled.pdf) was NOT created, and assemble_docs_body.sh failed. Propagating failure."
             exit 1
           fi
 
