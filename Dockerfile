@@ -42,3 +42,41 @@ EXPOSE 8000
 # Command to run the application using Uvicorn
 # The command targets the 'app' FastAPI instance inside the 'src.api' module
 CMD ["python", "-m", "uvicorn", "src.api:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# Set Timezone
+
+FROM ubuntu:latest
+
+# Use ARG for build-time variables
+ARG TZ=America/Denver
+ENV TZ=${TZ}
+
+# Install tzdata and configure the system
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata && \
+    ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
+    echo $TZ > /etc/timezone && \
+    apt-get clean
+
+# Crontab
+
+FROM ubuntu:latest
+
+# 1. Install cron
+RUN apt-get update && apt-get install -y cron
+
+# 2. Copy the crontab file to the cron.d directory
+COPY crontab /etc/cron.d/my-cron-job
+
+# 3. Give execution rights on the cron job
+RUN chmod 0644 /etc/cron.d/my-cron-job
+
+# 4. Apply the cron job
+RUN crontab /etc/cron.d/my-cron-job
+
+# 5. Create the log file to be able to run tail
+RUN touch /var/log/cron.log
+
+# 6. Run the command on container startup
+# Using 'cron && tail -f' keeps the container running
+CMD cron && tail -f /var/log/cron.log
