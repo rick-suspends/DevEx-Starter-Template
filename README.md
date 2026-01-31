@@ -4,7 +4,7 @@ This repository serves as a **production-ready, basic starting point (template)*
 
 It provides a pre-configured, modular foundation that demonstrates best practices for **containerization, CI/CD readiness, and cloud deployment**, allowing your team to focus immediately on the core business logic.
 
-The included **Jekyll Docs Tool Suite** is a functional example of a DevEx documentation system.
+The included **Jekyll Docs Tool Suite** is a functional example of a DevEx documentation system. This documentation is automatically built from Markdown and deployed via GitHub Actions, demonstrating a standard Docs-as-Code workflow.
 
 -----
 
@@ -47,7 +47,7 @@ To start a new DevEx project using this foundation:
 
    Since this repository is a **DevEx Starter Template**, the first step is to create your own independent copy by forking the repository. 
 
-   1. Create a server-side fork (web)
+   1. Fork the repository on GitHub 
 
       1.  Navigate to the [DevEx Starter Template GitHub page](https://github.com/rick-suspends/DevEx-Starter-Template) 
 
