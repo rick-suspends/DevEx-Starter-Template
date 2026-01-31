@@ -15,7 +15,7 @@ This project has the following main sections:
 
 Since this repository is a **DevEx Starter Template**, the first step is to create your own independent copy by forking the repository. 
 
-1. For the repository on GitHub 
+1. Fork the repository on GitHub 
 
     1.  Navigate to the [DevEx Starter Template GitHub page](https://github.com/rick-suspends/DevEx-Starter-Template).
 
