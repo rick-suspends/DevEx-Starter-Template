@@ -1,4 +1,4 @@
---
+---
 layout: page
 title: Welcome to the DevEx Starter Template docs 
 permalink: /
