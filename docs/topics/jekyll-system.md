@@ -36,7 +36,7 @@ permalink: jekyll-system.html
 
 - `_includes`: This directory contains reusable components that can be included in multiple pages, such as headers, footers, navigation elements, and boilerplate text. From your content, you include these components with Liquid tags, such as `{% raw %}{% include header.html %}{% endraw %}`.
 
-- `_site`: This is the output directory where Jekyll generates the static site.
+- `_site`: This is the output directory where Jekyll generates the static site. **Note: Include this directory in .gitignore so it is not added to the repo**.
 
 - `assets`: This directory contains static assets like CSS, JavaScript, and images used in the documentation.
 
@@ -64,5 +64,5 @@ You can also build the site without starting a server using:
 jekyll build
 ```
 
-This command generates the static site in the `_site` directory without serving it. You can then deploy the contents of the `_site` directory to your web server or hosting service, or as in this DevEx Starter Template examples, doing a `git push` automatically starts a GitHub Action that updates the GitHub Pages site with the updated content. 
+This command generates the static site in the `_site` directory without serving it. You can then deploy the contents of the `_site` directory to your web server or hosting service, or as in this DevEx Starter Template example, simply `git push` your changes. This triggers a GitHub Action that automatically rebuilds and deploys the content to GitHub Pages.
 
