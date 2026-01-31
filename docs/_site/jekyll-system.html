@@ -85,7 +85,7 @@
     <p><code class="language-plaintext highlighter-rouge">_includes</code>: This directory contains reusable components that can be included in multiple pages, such as headers, footers, navigation elements, and boilerplate text. From your content, you include these components with Liquid tags, such as <code class="language-plaintext highlighter-rouge">{% include header.html %}</code>.</p>
   </li>
   <li>
-    <p><code class="language-plaintext highlighter-rouge">_site</code>: This is the output directory where Jekyll generates the static site.</p>
+    <p><code class="language-plaintext highlighter-rouge">_site</code>: This is the output directory where Jekyll generates the static site. <strong>Note: Include this directory in .gitignore so it is not added to the repo</strong>.</p>
   </li>
   <li>
     <p><code class="language-plaintext highlighter-rouge">assets</code>: This directory contains static assets like CSS, JavaScript, and images used in the documentation.</p>
@@ -116,7 +116,7 @@
 <div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>jekyll build
 </code></pre></div></div>
 
-<p>This command generates the static site in the <code class="language-plaintext highlighter-rouge">_site</code> directory without serving it. You can then deploy the contents of the <code class="language-plaintext highlighter-rouge">_site</code> directory to your web server or hosting service, or as in this DevEx Starter Template examples, doing a <code class="language-plaintext highlighter-rouge">git push</code> automatically starts a GitHub Action that updates the GitHub Pages site with the updated content.</p>
+<p>This command generates the static site in the <code class="language-plaintext highlighter-rouge">_site</code> directory without serving it. You can then deploy the contents of the <code class="language-plaintext highlighter-rouge">_site</code> directory to your web server or hosting service, or as in this DevEx Starter Template example, simply <code class="language-plaintext highlighter-rouge">git push</code> your changes. This triggers a GitHub Action that automatically rebuilds and deploys the content to GitHub Pages.</p>
 
 
             </div>
@@ -127,7 +127,7 @@
     </div>
 
     <footer>
-        <p>&copy; 2025  | Built with Jekyll & GitHub Actions</p>
+        <p>&copy; 2026  | Built with Jekyll & GitHub Actions</p>
     </footer>
 
 </body>
