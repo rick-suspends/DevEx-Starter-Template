@@ -1,4 +1,4 @@
----
+--
 layout: page
 title: Welcome to the DevEx Starter Template docs 
 permalink: /
@@ -15,7 +15,7 @@ This project has the following main sections:
 
 Since this repository is a **DevEx Starter Template**, the first step is to create your own independent copy by forking the repository. 
 
-1. Create a server-side fork (web)
+1. For the repository on GitHub 
 
     1.  Navigate to the [DevEx Starter Template GitHub page](https://github.com/rick-suspends/DevEx-Starter-Template).
 
@@ -106,9 +106,6 @@ The **DevEx Starter Template** includes the following workflows:
 - **Check Links** &mdash; This workflow runs `htmlproofer` to check for broken links in the generated site whenever changes are pushed to the `main` branch.
 
 - **Generate PDF** &mdash; This workflow generates a PDF version of the documentation site using `wkhtmltopdf` whenever changes are pushed to the `main` branch. 
-
-
-- Others coming soon...
 
 ### Docker
 
