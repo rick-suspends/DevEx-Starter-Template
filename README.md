@@ -55,7 +55,7 @@ To start a new DevEx project using this foundation:
 
    2. Clone your fork (command line)
 
-      After the fork is complete, clone **your new copy** to your local machine. This is the sole remote (`origin`) for your project going forward.
+      After the fork is complete, clone **your new copy** to your local machine. This is the sole remote (`origin`) for your project.
 
       ```bash
       # Replace YOUR_USERNAME and YOUR_REPO with your new fork details
