@@ -2,6 +2,7 @@ import typer
 import requests
 from typing_extensions import Annotated
 from typing import Optional
+from src.api import find_orphaned_files
 
 # --- 1. Typer Application Setup ---
 
@@ -54,7 +55,32 @@ def check_url_command(
         typer.echo(f"[red]ERROR:[/red] Connection failed ({e})")
         raise typer.Exit(code=1)
 
-# --- 3. Main Execution Block ---
+# --- 3. Orphan Check Command ---
+
+@app.command(name="check-orphans")
+def check_orphans_command(
+    site_dir: Annotated[str, typer.Argument(help="Path to the Jekyll _site directory to scan.")] = "docs/_site",
+):
+    """
+    Scans a Jekyll _site directory for orphaned HTML files (no incoming links).
+
+    An orphaned file is one that exists in the site but is not linked from any
+    other page, making it unreachable to readers and search engines.
+    """
+    typer.echo(f"Scanning for orphaned files in: {site_dir}")
+
+    orphaned = find_orphaned_files(site_dir)
+
+    if not orphaned:
+        typer.echo("[green]No orphaned files found.[/green]")
+    else:
+        typer.echo(f"[red]Found {len(orphaned)} orphaned file(s):[/red]")
+        for f in orphaned:
+            typer.echo(f"  - {f}")
+        raise typer.Exit(code=1)
+
+
+# --- 4. Main Execution Block ---
 
 if __name__ == "__main__":
     app()
