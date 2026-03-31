@@ -1,0 +1,6 @@
+services:
+  devex-docs-validator:
+    build: .
+    image: richardmallery/devex-docs-validator:latest
+    ports:
+      - "8000:8000"
