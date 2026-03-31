@@ -1,5 +1,8 @@
 # 🛠️ DevEx Starter Template
 
+[![Run Tests](https://github.com/rick-suspends/DevEx-Starter-Template/actions/workflows/run-tests.yml/badge.svg)](https://github.com/rick-suspends/DevEx-Starter-Template/actions/workflows/run-tests.yml)
+[![Build and Deploy Docs](https://github.com/rick-suspends/DevEx-Starter-Template/actions/workflows/build-docs.yml/badge.svg)](https://github.com/rick-suspends/DevEx-Starter-Template/actions/workflows/build-docs.yml)
+
 This repository serves as a **production-ready, basic starting point (template)** for building any Developer Experience (DevEx) focused project, API, or service.
 
 It provides a pre-configured, modular foundation that demonstrates best practices for **containerization, CI/CD readiness, and cloud deployment**, allowing your team to focus immediately on the core business logic.
