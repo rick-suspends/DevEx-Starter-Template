@@ -15,3 +15,4 @@ pydantic>=2.0
 # Optional: Testing and Quality Assurance Tools
 # Essential for CI/CD pipeline (Step 2: Python Setup & Run Code Tests)
 pytest
+httpx
