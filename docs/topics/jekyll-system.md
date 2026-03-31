@@ -8,7 +8,7 @@ permalink: jekyll-system.html
 
 ```text
 /docs
-    ├── _config.yml           # Jekyll configuration file
+    ├── _config.yml           # Jekyll config file
     ├── _data                 # Data files for Jekyll
     │     └── tree.yml        # Site structure for sidebar navigation
     ├── _layouts              # Jekyll layout templates
