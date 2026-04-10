@@ -84,12 +84,3 @@ To start a new DevEx project using this foundation:
     This documentation is automatically built from Markdown and deployed via GitHub Actions, demonstrating a standard Docs-as-Code workflow.
 
 
------
-
-## ☁️ Deployment reference
-
-This table provides the live access point for this image, demonstrating a successful deployment from this template:
-
-| Environment | Service | Access URL |
-| :--- | :--- | :--- |
-| **Production** | AWS Lightsail Container Service | [Get status](https://container-service-1.gqceswqwzkchr.us-west-2.cs.amazonlightsail.com/status)<br>[Get info](https://container-service-1.gqceswqwzkchr.us-west-2.cs.amazonlightsail.com/info)<br>[View FastAPI docs](https://container-service-1.gqceswqwzkchr.us-west-2.cs.amazonlightsail.com/docs) |
